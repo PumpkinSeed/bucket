@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/brianvoe/gofakeit"
 	"github.com/rs/xid"
-	"github.com/volatiletech/null"
 	"time"
 )
 
@@ -78,10 +77,10 @@ func NewTestStruct1() testStruct1 {
 	}
 }
 
-func EmptyString() null.String {
-	return null.String{Valid: false}
+func EmptyString() string {
+	return ""
 }
 
-func EmptyBool() null.Bool {
-	return null.Bool{Valid: false}
+func EmptyBool() bool {
+	return false
 }

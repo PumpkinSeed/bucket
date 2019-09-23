@@ -1,14 +1,45 @@
 package odatas
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/volatiletech/null"
 	"testing"
 	"time"
 )
 
-type TestData struct {
+func TestSearchQuery(t *testing.T) {
+	sq := SearchQuery{
+		Query: "card",
+	}
 
+	sqjso, err := json.Marshal(sq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Print(string(sqjso))
+
+	placeholderInit()
+}
+
+func TestCreateFullTextSearchIndex(t *testing.T) {
+	err := DeleteFullTextSearchIndex("order_fts_idx")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	def, err := DefaultFullTextSearchIndexDefinition(FullTextSearchIndexMeta{
+		Name:                 "order_fts_idx",
+		SourceType:           "couchbase",
+		SourceName:           "company",
+		DocIDPrefixDelimiter: "::",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = CreateFullTextSearchIndex(def)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestSimpleSearchMatch(t *testing.T) {
@@ -22,31 +53,11 @@ func TestSimpleSearchMatch(t *testing.T) {
 		}
 	}
 
-	fields := []string{
-		"Status",
-		"PaymentMethod",
-		"Email",
-		"CardHolderName",
-		"BillingAddressName",
-		"BillingAddressAddress1",
-		"BillingAddressCity",
-		"BillingAddressCountry",
-		"BillingAddressPostalCode",
-		"BillingAddressPhone",
-		"Notes",
-		"ShippingMethod",
-	}
-	manager := placeholderBucket.Manager("", "")
-	err := manager.CreateIndex("order_idx", fields, true, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	handler := New(&Configuration{})
-	searchMatch := "Clay Monahan"
+	searchMatch := "Talia Hudson"
 	mes := time.Now()
-	err = handler.SimpleSearch("order_idx", &SearchQuery{
-		Match: null.StringFrom(searchMatch),
+	err := handler.SimpleSearch("order_fts_idx", &SearchQuery{
+		Match: searchMatch,
 		Field: "CardHolderName",
 	})
 	fmt.Println(time.Since(mes))
