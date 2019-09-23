@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	BUCKET_USERNAME = ""
-	BUCKET_PASSWORD = ""
-	TAG_JSON        = "json"
-	TAG_INDEXED     = "indexed"
-	TAG_REFERENCED  = "referenced"
+	BucketUsername = ""
+	BucketPassword = ""
+	TagJson        = "json"
+	TagIndexable   = "indexable"
+	TagReferenced  = "referenced"
 )
 
 type indexer struct {
@@ -21,7 +21,7 @@ type indexer struct {
 }
 
 func NewIndexer(b *gocb.Bucket) *indexer {
-	return &indexer{bucket: b, bucketManager: b.Manager(BUCKET_USERNAME, BUCKET_PASSWORD)}
+	return &indexer{bucket: b, bucketManager: b.Manager(BucketUsername, BucketPassword)}
 }
 
 func (i *indexer) Index(v interface{}) error {
@@ -66,11 +66,11 @@ func goDeep(t reflect.Type) (indexed []string, referenced []string) {
 			goDeep(f.Type)
 		}
 		if f.Tag != "" {
-			if json := f.Tag.Get(TAG_JSON); json != "" && json != "-" {
-				if f.Tag.Get(TAG_INDEXED) != "" {
+			if json := f.Tag.Get(TagJson); json != "" && json != "-" {
+				if f.Tag.Get(TagIndexable) != "" {
 					indexed = append(indexed, json)
 				}
-				if f.Tag.Get(TAG_REFERENCED) != "" {
+				if f.Tag.Get(TagReferenced) != "" {
 					referenced = append(referenced, json)
 				}
 			}
