@@ -30,11 +30,16 @@ func (i *indexer) Index(v interface{}) error {
 	}
 
 	t := reflect.TypeOf(v)
-	indexed, _ := goDeep(t)
 
-	if err := makeIndex(i.bucketManager, t.Name(), indexed); err != nil {
+	indexable, _ := goDeep(t)
+
+	if err := makeIndex(i.bucketManager, t.Name(), indexable); err != nil {
 		return err
 	}
+
+	//if err := makeReference(i.bucketManager, v, referenced); err != nil {
+	//	return err
+	//}
 
 	return nil
 }
@@ -81,8 +86,35 @@ func goDeep(t reflect.Type) (indexed []string, referenced []string) {
 
 func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []string) error {
 	if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
-		log.Printf("Error when create secondary index %+v", err)
-		return err
+		if err == gocb.ErrIndexAlreadyExists {
+			_ = manager.DropIndex(indexName, true)
+			return makeIndex(manager, indexName, indexedFields)
+		} else {
+			log.Printf("Error when create secondary index %+v", err)
+			return err
+		}
 	}
 	return nil
+}
+
+func makeReference(bm *gocb.BucketManager, v interface{}, referenced []string) error {
+	dd := &gocb.DesignDocument{
+		Name: "landmarks",
+		Views: map[string]gocb.View{
+			"by_country": {
+				Map: "function (doc, meta) { if (doc.type == 'landmark') { emit([doc.country, doc.city], null); } }",
+			},
+			"by_activity": {
+				Map:    "function (doc, meta) { if (doc.type == 'landmark') { emit(doc.activity, null); } }",
+				Reduce: "_count",
+			},
+		},
+		SpatialViews: map[string]gocb.View{
+			"by_coordinates": {
+				Map: "function (doc, meta) { if (doc.type == 'landmark') { emit([doc.geo.lon, doc.geo.lat], null); } }",
+			},
+		},
+	}
+
+	return bm.InsertDesignDocument(dd)
 }
