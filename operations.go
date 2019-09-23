@@ -8,19 +8,36 @@ import (
 	"reflect"
 )
 
-func Write(i interface{},typ string) error {
+func Insert(q interface{},typ string) error {
+	err := write(q,typ,"")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func write(q interface{},typ,id string) error {
 	fields := make(map[string]interface{})
-	fields["ID"]= typ + "::" + xid.New().String()
-	if reflect.ValueOf(i).Kind() == reflect.Struct {
-		v := reflect.ValueOf(i)
+	if id == "" {
+		id = xid.New().String()
+	}
+	fields["ID"]= typ + "::" + id
+
+	if reflect.ValueOf(q).Kind() == reflect.Struct {
+		v := reflect.ValueOf(q)
 		for i := 0; i < v.NumField(); i++ {
 			if v.Field(i).Kind() == reflect.Struct {
-				//TODO
-				continue
+				a := v.Type().Field(i)
+				b := v.Field(i).Interface()
+				err := write(b,a.Name,id)
+				if err != nil {
+					return err
+				}
+			} else {
+				k := v.Type().Field(i).Name
+				val := v.Field(i)
+				fields[k] = fmt.Sprintf("%v", val)
 			}
-			k := v.Type().Field(i).Name
-			val := v.Field(i)
-			fields[k] = fmt.Sprintf("%v",val)
 		}
 
 		json, err := json.Marshal(fields)
@@ -31,17 +48,11 @@ func Write(i interface{},typ string) error {
 	} else {
 		return errors.New("not a struct")
 	}
-	fmt.Println("dass")
-	fmt.Println(fields["OrdId"])
-	fmt.Println(fields["CustomerId"])
-	fmt.Println(len(fields))
-
 	//handler.bucket.Insert(map["ID"],json)
 	return nil
 }
 
-
-
 func Read() {
 
 }
+
