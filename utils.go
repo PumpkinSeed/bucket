@@ -48,6 +48,13 @@ type testStruct1 struct {
 	PaymentTransactionId         string `json:"payment_transaction_id"`
 }
 
+type testStructEmbedded struct {
+	BasicData testStruct1 `json:"basic_data"`
+	Tags      []string    `json:"tags"`
+	CreatedAt time.Time   `json:"created_at" indexable:"true"`
+	DeletedAt time.Time   `json:"deleted_at" indexable:"true"`
+}
+
 func newTestStruct1() testStruct1 {
 	addr := gofakeit.Address()
 	name := gofakeit.Name()

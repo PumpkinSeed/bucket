@@ -36,7 +36,7 @@ func init() {
 }
 
 func TestIndexCreate(t *testing.T) {
-	instance := testStruct1{}
+	instance := testStructEmbedded{}
 
 	if err := h.Index(instance); err != nil {
 		t.Fatal(err)

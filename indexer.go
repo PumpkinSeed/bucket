@@ -20,29 +20,35 @@ func (h *Handler) Index(v interface{}) error {
 
 	t := reflect.TypeOf(v)
 
-	indexables := goDeep(t)
+	indexables := make(map[string][]string)
+	goDeep(t, indexables)
 
-	if err := makeIndex(h.bucketManager, t.Name(), indexables); err != nil {
-		return err
+	for key, val := range indexables {
+		if err := makeIndex(h.bucketManager, key, val); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func goDeep(t reflect.Type) (indexed []string) {
+func goDeep(t reflect.Type, indexables map[string][]string) {
+	indexables[t.Name()] = []string{}
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if f.Type.Kind() == reflect.Struct {
-			goDeep(f.Type)
+			goDeep(f.Type, indexables)
 		}
 		if f.Tag != "" {
 			if json := f.Tag.Get(TagJson); json != "" && json != "-" {
 				if f.Tag.Get(TagIndexable) != "" {
-					indexed = append(indexed, json)
+					indexables[t.Name()] = append(indexables[t.Name()], json)
 				}
 			}
 		}
 	}
-	return indexed
+	if len(indexables[t.Name()]) == 0 {
+		delete(indexables, t.Name())
+	}
 }
 
 func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []string) error {
