@@ -14,7 +14,7 @@ const (
 )
 
 func (h *Handler) Index(v interface{}) error {
-	if err := h.bucketManager.CreatePrimaryIndex("", true, false); err != nil {
+	if err := h.GetManager().CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)
 	}
 
@@ -24,7 +24,7 @@ func (h *Handler) Index(v interface{}) error {
 	goDeep(t, indexables)
 
 	for key, val := range indexables {
-		if err := makeIndex(h.bucketManager, key, val); err != nil {
+		if err := makeIndex(h.GetManager(), key, val); err != nil {
 			return err
 		}
 	}

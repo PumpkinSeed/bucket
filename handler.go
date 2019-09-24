@@ -16,8 +16,10 @@ type Handler struct {
 
 	http *http.Client
 
-	bucket        *gocb.Bucket
-	bucketManager *gocb.BucketManager
+	bucket *gocb.Bucket
+
+	username string // temp field
+	password string // temp field
 }
 
 type Configuration struct {
@@ -47,9 +49,14 @@ func New(c *Configuration) Handler {
 	bucket, _ := cluster.OpenBucket(c.BucketName, "")
 
 	return Handler{
-		http:          client,
-		httpAddress:   "http://localhost:8091",
-		bucket:        bucket,
-		bucketManager: bucket.Manager(c.Username, c.Password),
+		http:        client,
+		httpAddress: "http://localhost:8091",
+		bucket:      bucket,
+		username:    c.Username,
+		password:    c.Password,
 	}
+}
+
+func (h *Handler) GetManager() *gocb.BucketManager {
+	return h.bucket.Manager(h.username, h.password)
 }

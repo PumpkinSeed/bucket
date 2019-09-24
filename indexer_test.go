@@ -23,7 +23,7 @@ func init() {
 	})
 
 	start := time.Now()
-	if err := h.bucketManager.Flush(); err != nil {
+	if err := h.GetManager().Flush(); err != nil {
 		fmt.Printf("Turn on flush in bucket: %+v\n", err)
 	}
 	fmt.Printf("Bucket flushed: %v\n", time.Since(start))
@@ -42,7 +42,7 @@ func TestIndexCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	indexes, err := h.bucketManager.GetIndexes()
+	indexes, err := h.GetManager().GetIndexes()
 	if err != nil {
 		t.Fatal(err)
 	}
