@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	TagJson      = "json"
-	TagIndexable = "indexable"
+	tagJson      = "json"
+	tagIndexable = "indexable"
 	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
@@ -39,8 +39,8 @@ func goDeep(t reflect.Type, indexables map[string][]string) {
 			goDeep(f.Type, indexables)
 		}
 		if f.Tag != "" {
-			if json := f.Tag.Get(TagJson); json != "" && json != "-" {
-				if f.Tag.Get(TagIndexable) != "" {
+			if json := f.Tag.Get(tagJson); json != "" && json != "-" {
+				if f.Tag.Get(tagIndexable) != "" {
 					indexables[t.Name()] = append(indexables[t.Name()], json)
 				}
 			}
