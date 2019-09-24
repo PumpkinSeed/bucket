@@ -15,7 +15,7 @@ const (
 	bucketName = "company"
 )
 
-var i *indexer
+var h Handler
 
 type indexableUser struct {
 	ID          string `json:"id" indexable:"true"`
@@ -26,16 +26,15 @@ type indexableUser struct {
 }
 
 func init() {
-	cluster, _ := gocb.Connect("couchbase://localhost")
-	_ = cluster.Authenticate(gocb.PasswordAuthenticator{
-		Username: "Administrator",
-		Password: "password",
+	h = New(&Configuration{
+		Username:       "Administrator",
+		Password:       "password",
+		BucketName:     bucketName,
+		BucketPassword: "",
 	})
-	bucket, _ := cluster.OpenBucket(bucketName, "")
-	i = NewIndexer(bucket, "Administrator", "password")
 
 	start := time.Now()
-	if err := i.bucketManager.Flush(); err != nil {
+	if err := h.bucketManager.Flush(); err != nil {
 		fmt.Printf("Turn on flush in bucket: %+v\n", err)
 	}
 	fmt.Printf("Bucket flushed: %v\n", time.Since(start))
@@ -48,7 +47,7 @@ func init() {
 			Address:     gofakeit.Address().Address,
 			Password:    "123",
 		}
-		_, _ = i.bucket.Insert(instance.ID, instance, 0)
+		_, _ = h.bucket.Insert(instance.ID, instance, 0)
 	}
 	fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 }
@@ -56,11 +55,11 @@ func init() {
 func TestIndexCreate(t *testing.T) {
 	instance := indexableUser{}
 
-	if err := i.Index(instance); err != nil {
+	if err := h.Index(instance); err != nil {
 		t.Fatal(err)
 	}
 
-	indexes, err := i.bucketManager.GetIndexes()
+	indexes, err := h.bucketManager.GetIndexes()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +74,7 @@ func TestIndexCreate(t *testing.T) {
 }
 
 func TestSearchWithIndex(t *testing.T) {
-	if err := i.Index(indexableUser{}); err != nil {
+	if err := h.Index(indexableUser{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -87,7 +86,7 @@ func TestSearchWithIndex(t *testing.T) {
 }
 
 func TestSearchWithoutIndex(t *testing.T) {
-	if err := i.Index(indexableUser{}); err != nil {
+	if err := h.Index(indexableUser{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -99,7 +98,7 @@ func TestSearchWithoutIndex(t *testing.T) {
 }
 
 func BenchmarkWithIndex(b *testing.B) {
-	if err := i.Index(indexableUser{}); err != nil {
+	if err := h.Index(indexableUser{}); err != nil {
 		b.Fatal(err)
 	}
 
@@ -115,7 +114,7 @@ func BenchmarkWithIndex(b *testing.B) {
 }
 
 func BenchmarkWithoutIndex(b *testing.B) {
-	if err := i.Index(indexableUser{}); err != nil {
+	if err := h.Index(indexableUser{}); err != nil {
 		b.Fatal(err)
 	}
 
@@ -132,7 +131,7 @@ func BenchmarkWithoutIndex(b *testing.B) {
 
 func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := i.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(name, $1)"), []interface{}{"a"})
+	resp, err := h.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(name, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}
@@ -142,7 +141,7 @@ func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 
 func searchNotIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := i.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(address, $1)"), []interface{}{"a"})
+	resp, err := h.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(address, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}

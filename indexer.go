@@ -18,12 +18,8 @@ type indexer struct {
 	bucketManager *gocb.BucketManager
 }
 
-func NewIndexer(b *gocb.Bucket, BucketUsername, BucketPassword string) *indexer {
-	return &indexer{bucket: b, bucketManager: b.Manager(BucketUsername, BucketPassword)}
-}
-
-func (i *indexer) Index(v interface{}) error {
-	if err := i.bucketManager.CreatePrimaryIndex("", true, false); err != nil {
+func (h *Handler) Index(v interface{}) error {
+	if err := h.bucketManager.CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)
 	}
 
@@ -31,7 +27,7 @@ func (i *indexer) Index(v interface{}) error {
 
 	indexables := goDeep(t)
 
-	if err := makeIndex(i.bucketManager, t.Name(), indexables); err != nil {
+	if err := makeIndex(h.bucketManager, t.Name(), indexables); err != nil {
 		return err
 	}
 	return nil
