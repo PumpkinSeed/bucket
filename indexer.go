@@ -8,11 +8,9 @@ import (
 )
 
 const (
-	//BucketUsername = "Administrator"
-	//BucketPassword = "password"
-	TagJson       = "json"
-	TagIndexable  = "indexable"
-	TagReferenced = "referenced"
+	TagJson      = "json"
+	TagIndexable = "indexable"
+	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
 type indexer struct {
@@ -31,20 +29,15 @@ func (i *indexer) Index(v interface{}) error {
 
 	t := reflect.TypeOf(v)
 
-	indexable, references := goDeep(t)
+	indexables := goDeep(t)
 
-	if err := makeIndex(i.bucketManager, t.Name(), indexable); err != nil {
+	if err := makeIndex(i.bucketManager, t.Name(), indexables); err != nil {
 		return err
 	}
-
-	if err := makeReference(i.bucketManager, v, references); err != nil {
-		return err
-	}
-
 	return nil
 }
 
-func goDeep(t reflect.Type) (indexed []string, referenced []string) {
+func goDeep(t reflect.Type) (indexed []string) {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if f.Type.Kind() == reflect.Struct {
@@ -55,13 +48,10 @@ func goDeep(t reflect.Type) (indexed []string, referenced []string) {
 				if f.Tag.Get(TagIndexable) != "" {
 					indexed = append(indexed, json)
 				}
-				if f.Tag.Get(TagReferenced) != "" {
-					referenced = append(referenced, json)
-				}
 			}
 		}
 	}
-	return indexed, referenced
+	return indexed
 }
 
 func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []string) error {
@@ -74,9 +64,5 @@ func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []st
 			return err
 		}
 	}
-	return nil
-}
-
-func makeReference(bm *gocb.BucketManager, v interface{}, referenced []string) error {
 	return nil
 }
