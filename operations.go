@@ -1,58 +1,84 @@
 package odatas
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/couchbase/gocb"
 	"github.com/rs/xid"
 	"reflect"
 )
 
-func Insert(q interface{},typ string) error {
-	err := write(q,typ,"")
+var (
+	placeholderBucket *gocb.Bucket
+)
+
+func placeholderInit() {
+	if placeholderBucket == nil {
+		cb, err := gocb.Connect("couchbase://localhost")
+		if err != nil {
+			panic(err)
+		}
+
+		err = cb.Authenticate(gocb.PasswordAuthenticator{
+			Username: "Administrator",
+			Password: "password",
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		placeholderBucket, err = cb.OpenBucket("company", "")
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func Insert(q interface{}, typ string) error {
+	err := write(q, typ, "")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func write(q interface{},typ,id string) error {
+func write(q interface{}, typ, id string) error {
 	fields := make(map[string]interface{})
 	if id == "" {
 		id = xid.New().String()
 	}
-	fields["ID"]= typ + "::" + id
+	documentID := typ + "::" + id
 
+	//var jso []byte
 	if reflect.ValueOf(q).Kind() == reflect.Struct {
 		v := reflect.ValueOf(q)
 		for i := 0; i < v.NumField(); i++ {
 			if v.Field(i).Kind() == reflect.Struct {
 				a := v.Type().Field(i)
 				b := v.Field(i).Interface()
-				err := write(b,a.Name,id)
+				err := write(b, a.Tag.Get("json"), id)
 				if err != nil {
 					return err
 				}
 			} else {
-				k := v.Type().Field(i).Name
+				k := v.Type().Field(i).Tag.Get("json")
 				val := v.Field(i)
 				fields[k] = fmt.Sprintf("%v", val)
 			}
 		}
 
-		json, err := json.Marshal(fields)
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(json))
+		//jso, err := json.Marshal(fields)
+		//if err != nil {
+		//	return err
+		//}
+		//fmt.Println(string(jso))
 	} else {
 		return errors.New("not a struct")
 	}
-	//handler.bucket.Insert(map["ID"],json)
-	return nil
+	_, err := placeholderBucket.Insert(documentID, fields, 0)
+	return err
 }
 
-func Read() {
+func Read(id, documentType string, result interface{}) {
 
 }
-
