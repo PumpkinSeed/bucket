@@ -21,32 +21,6 @@ func TestSearchQuery(t *testing.T) {
 	placeholderInit()
 }
 
-func TestCreateFullTextSearchIndex(t *testing.T) {
-	indexName := "order_fts_idx"
-
-	h := New(&Configuration{})
-	if ok, _, _ := h.InspectFullTextSearchIndex(indexName); ok {
-		err := h.DeleteFullTextSearchIndex(indexName)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
-		Name:                 indexName,
-		SourceType:           "couchbase",
-		SourceName:           "company",
-		DocIDPrefixDelimiter: "::",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = h.CreateFullTextSearchIndex(def)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestSimpleSearchMatch(t *testing.T) {
 	placeholderInit()
 
@@ -59,11 +33,11 @@ func TestSimpleSearchMatch(t *testing.T) {
 	}
 
 	handler := New(&Configuration{})
-	searchMatch := "Talia Hudson"
+	searchMatch := "Talia"
 	mes := time.Now()
 	err := handler.SimpleSearch("order_fts_idx", &SearchQuery{
-		Match: searchMatch,
-		Field: "CardHolderName",
+		Query: searchMatch,
+		//Field: "CardHolderName",
 	})
 	fmt.Println(time.Since(mes))
 	if err != nil {
