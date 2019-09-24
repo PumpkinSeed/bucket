@@ -30,27 +30,29 @@ type SearchQuery struct {
 	Prefix      string `json:"prefix,omitempty"`
 	Regexp      string `json:"regexp,omitempty"`
 	Wildcard    string `json:"wildcard,omitempty"`
-	Bool        bool   `json:"bool,omitempty"`
 
 	Field        string `json:"field,omitempty"`
 	Analyzer     string `json:"analyzer,omitempty"`
 	Fuzziness    int64  `json:"fuzziness,omitempty"`
 	PrefixLength int64  `json:"prefix_length,omitempty"`
 
-	Limit int `json:"-"`
+	Limit  int `json:"-"`
 	Offset int `json:"-"`
 }
 
 type FacetDef struct {
-	Name string
-	Type int
+	Name  string
+	Type  int
 	Field string
-	Size int
+	Size  int
 }
 
 type CompoundQueries struct {
-	Conjunction []SearchQuery `json:"conjuction,omitempty"`
-	Disjunction []SearchQuery `json:"disjunction,omitempty"`
+	Conjunction []SearchQuery `json:"conjuncts,omitempty"`
+	Disjunction []SearchQuery `json:"disjuncts,omitempty"`
+
+	Limit  int `json:"-"`
+	Offset int `json:"-"`
 }
 
 type RangeQuery struct {
@@ -68,6 +70,9 @@ type RangeQuery struct {
 	InclusiveMax   bool `json:"inclusive_max,omitempty"`
 
 	Field string `json:"field,omitempty"`
+
+	Limit  int `json:"-"`
+	Offset int `json:"-"`
 }
 
 func placeholderInit() {
@@ -93,33 +98,111 @@ func placeholderInit() {
 	}
 }
 
-func (h *Handler) SimpleSearch(index string, q *SearchQuery) error {
+func (h *Handler) SimpleSearch(index string, q *SearchQuery) ([]gocb.SearchResultHit, error) {
 	placeholderInit()
 
 	if err := q.Setup(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if index == "" {
-		return ErrEmptyIndex
+		return nil, ErrEmptyIndex
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	return h.doSimpleSearch(query)
+	hits, _, err := h.doSearch(query)
+	return hits, err
 }
 
-func (h *Handler) SimpleSearchWithFacets(index string, q *SearchQuery, facets []FacetDef) error {
+func (h *Handler) SimpleSearchWithFacets(index string, q *SearchQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
 	placeholderInit()
 
 	if err := q.Setup(); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	if index == "" {
-		return ErrEmptyIndex
+		return nil, nil, ErrEmptyIndex
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
+	h.addFacets(query, facets)
+
+	return h.doSearch(query)
+}
+
+func (h *Handler) CompoundSearch(index string, q *CompoundQueries) ([]gocb.SearchResultHit, error) {
+	if err := q.Setup(); err != nil {
+		return nil, err
+	}
+
+	if index == "" {
+		return nil, ErrEmptyIndex
+	}
+
+	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
+	result, _, err := h.doSearch(query)
+	return result, err
+}
+
+func (h *Handler) CompoundSearchWithFacets(index string, q *CompoundQueries, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+	if err := q.Setup(); err != nil {
+		return nil, nil, err
+	}
+
+	if index == "" {
+		return nil, nil, ErrEmptyIndex
+	}
+
+	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
+	h.addFacets(query, facets)
+	result, facetResult, err := h.doSearch(query)
+	return result, facetResult, err
+}
+
+func (h *Handler) RangeSearch(index string, q *RangeQuery) ([]gocb.SearchResultHit, error) {
+	if err := q.Setup(); err != nil {
+		return nil, err
+	}
+
+	if index == "" {
+		return nil, ErrEmptyIndex
+	}
+
+	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
+	result, _, err := h.doSearch(query)
+	return result, err
+}
+
+func (h *Handler) RangeSearchWithFacets(index string, q *RangeQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+	if err := q.Setup(); err != nil {
+		return nil, nil, err
+	}
+
+	if index == "" {
+		return nil, nil, ErrEmptyIndex
+	}
+
+	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
+	h.addFacets(query, facets)
+	result, facetResult, err := h.doSearch(query)
+	return result, facetResult, err
+}
+
+func (h *Handler) doSearch(query *gocb.SearchQuery) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+	res, err := placeholderBucket.ExecuteSearchQuery(query)
+	if err != nil {
+		return nil, nil, err
+	}
+	fmt.Printf("%+v\n", res.Status())
+	for i, v := range res.Hits() {
+		fmt.Printf("%d ---- %+v\n", i, v)
+	}
+
+	return res.Hits(), res.Facets(), nil
+}
+
+func (h *Handler) addFacets(query *gocb.SearchQuery, facets []FacetDef) {
 	for _, facet := range facets {
 		switch facet.Type {
 		case FacetDate:
@@ -130,43 +213,16 @@ func (h *Handler) SimpleSearchWithFacets(index string, q *SearchQuery, facets []
 			query.AddFacet(facet.Name, cbft.NewTermFacet(facet.Field, facet.Size))
 		}
 	}
-
-	return h.doSimpleSearch(query)
-}
-
-func (h *Handler) doSimpleSearch(query *gocb.SearchQuery) error {
-	res, err := placeholderBucket.ExecuteSearchQuery(query)
-	if err != nil {
-		return err
-	}
-	fmt.Println(res.Status())
-	for _, hit := range res.Hits() {
-		fmt.Printf("%+v\n", hit)
-	}
-	for _, facet := range res.Facets() {
-		fmt.Printf("%+v\n", facet)
-	}
-
-	return nil
-}
-
-func (h *Handler) CompoundSearch(doc string, q *CompoundQueries) {
-
-}
-
-func (h *Handler) RangeSearch(doc string, q *RangeQuery) {
-
 }
 
 func (s *SearchQuery) Setup() error {
 	if s.Query != "" {
-		s.Match = emptyString()
-		s.MatchPhrase = emptyString()
-		s.Term = emptyString()
-		s.Prefix = emptyString()
-		s.Regexp = emptyString()
-		s.Wildcard = emptyString()
-		s.Bool = emptyBool()
+		s.Match = ""
+		s.MatchPhrase = ""
+		s.Term = ""
+		s.Prefix = ""
+		s.Regexp = ""
+		s.Wildcard = ""
 		return nil
 	}
 
@@ -176,58 +232,95 @@ func (s *SearchQuery) Setup() error {
 
 	switch {
 	case s.Match != "":
-		s.MatchPhrase = emptyString()
-		s.Term = emptyString()
-		s.Prefix = emptyString()
-		s.Regexp = emptyString()
-		s.Wildcard = emptyString()
-		s.Bool = emptyBool()
+		s.Query = ""
+		s.MatchPhrase = ""
+		s.Term = ""
+		s.Prefix = ""
+		s.Regexp = ""
+		s.Wildcard = ""
 	case s.MatchPhrase != "":
-		s.Match = emptyString()
-		s.Term = emptyString()
-		s.Prefix = emptyString()
-		s.Regexp = emptyString()
-		s.Wildcard = emptyString()
-		s.Bool = emptyBool()
+		s.Query = ""
+		s.Match = ""
+		s.Term = ""
+		s.Prefix = ""
+		s.Regexp = ""
+		s.Wildcard = ""
 	case s.Term != "":
-		s.Match = emptyString()
-		s.MatchPhrase = emptyString()
-		s.Prefix = emptyString()
-		s.Regexp = emptyString()
-		s.Wildcard = emptyString()
-		s.Bool = emptyBool()
+		s.Query = ""
+		s.Match = ""
+		s.MatchPhrase = ""
+		s.Prefix = ""
+		s.Regexp = ""
+		s.Wildcard = ""
 	case s.Prefix != "":
-		s.Match = emptyString()
-		s.MatchPhrase = emptyString()
-		s.Term = emptyString()
-		s.Regexp = emptyString()
-		s.Wildcard = emptyString()
-		s.Bool = emptyBool()
+		s.Query = ""
+		s.Match = ""
+		s.MatchPhrase = ""
+		s.Term = ""
+		s.Regexp = ""
+		s.Wildcard = ""
 	case s.Regexp != "":
-		s.Match = emptyString()
-		s.MatchPhrase = emptyString()
-		s.Term = emptyString()
-		s.Prefix = emptyString()
-		s.Wildcard = emptyString()
-		s.Bool = emptyBool()
+		s.Query = ""
+		s.Match = ""
+		s.MatchPhrase = ""
+		s.Term = ""
+		s.Prefix = ""
+		s.Wildcard = ""
 	case s.Wildcard != "":
-		s.Match = emptyString()
-		s.MatchPhrase = emptyString()
-		s.Term = emptyString()
-		s.Prefix = emptyString()
-		s.Regexp = emptyString()
-		s.Bool = emptyBool()
-		//case s.Bool.Valid:
-		//	s.Match = emptyString()
-		//	s.MatchPhrase = emptyString()
-		//	s.Term = emptyString()
-		//	s.Prefix = emptyString()
-		//	s.Regexp = emptyString()
-		//	s.Wildcard = emptyString()
+		s.Query = ""
+		s.Match = ""
+		s.MatchPhrase = ""
+		s.Term = ""
+		s.Prefix = ""
+		s.Regexp = ""
 	}
 	return nil
 }
 
-/*
-	Index of FTS
-*/
+func (c *CompoundQueries) Setup() error {
+	if c.Conjunction == nil && c.Disjunction == nil {
+		return errors.New("")
+	}
+
+	if c.Conjunction != nil {
+		c.Disjunction = nil
+		for _, sq := range c.Conjunction {
+			err := sq.Setup()
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		for _, sq := range c.Disjunction {
+			err := sq.Setup()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (d *RangeQuery) Setup() error {
+	if d.Field == "" {
+		return ErrEmptyField
+	}
+
+	if !d.StartAsTime.IsZero() {
+		if d.EndAsTime.IsZero() {
+			return errors.New("")
+		}
+		d.Start = d.StartAsTime.Format(time.RFC3339)
+		d.End = d.EndAsTime.Format(time.RFC3339)
+
+		d.Min = 0
+		d.Max = 0
+		return nil
+	}
+
+	d.Start = ""
+	d.End = ""
+
+	return nil
+}
