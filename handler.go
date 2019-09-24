@@ -4,6 +4,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/couchbase/gocb"
 )
 
 type Handler struct {
@@ -13,13 +15,19 @@ type Handler struct {
 	httpAddress string
 
 	http *http.Client
+
+	bucket *gocb.Bucket
+
+	username string // temp field
+	password string // temp field
 }
 
 type Configuration struct {
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	BucketUsername string `json:"bucket_username"`
-	BucketPassword string `json:"bucket_password"`
+	Username         string `json:"username"`
+	Password         string `json:"password"`
+	BucketName       string `json:"bucket_name"`
+	BucketPassword   string `json:"bucket_password"`
+	ConnectionString string `json:"connection_string"`
 }
 
 func New(c *Configuration) Handler {
@@ -33,10 +41,22 @@ func New(c *Configuration) Handler {
 		Timeout: time.Second * 10,
 	}
 
+	cluster, _ := gocb.Connect(c.ConnectionString)
+	_ = cluster.Authenticate(gocb.PasswordAuthenticator{
+		Username: c.Username,
+		Password: c.Password,
+	})
+	bucket, _ := cluster.OpenBucket(c.BucketName, "")
+
 	return Handler{
-		http: client,
+		http:        client,
 		httpAddress: "http://localhost:8091",
+		bucket:      bucket,
+		username:    c.Username,
+		password:    c.Password,
 	}
 }
 
-
+func (h *Handler) GetManager() *gocb.BucketManager {
+	return h.bucket.Manager(h.username, h.password)
+}
