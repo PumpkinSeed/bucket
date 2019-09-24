@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/couchbase/gocb"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 )
@@ -198,55 +197,66 @@ const (
 	ftsEndpoint = "/_p/fts/api/index"
 )
 
-type FullTextSearchIndexDefinition struct {
-	Type       string                        `json:"type"`
-	Name       string                        `json:"name"`
-	SourceType string                        `json:"sourceType"`
-	SourceName string                        `json:"sourceName"`
-	PlanParams FullTextSearchIndexPlanParams `json:"planParams"`
-	Params     FullTextSearchIndexParams     `json:"params"`
+type apiResponse struct {
+	Status    string    `json:"status"`
+	IndexDefs IndexDefs `json:"indexDefs"`
+	Error     string    `json:"error"`
 }
 
-type FullTextSearchIndexPlanParams struct {
+type IndexDefs struct {
+	UUID      string                     `json:"uuid"`
+	IndexDefs map[string]IndexDefinition `json:"indexDefs"`
+}
+
+type IndexDefinition struct {
+	Type       string          `json:"type"`
+	Name       string          `json:"name"`
+	SourceType string          `json:"sourceType"`
+	SourceName string          `json:"sourceName"`
+	PlanParams IndexPlanParams `json:"planParams"`
+	Params     IndexParams     `json:"params"`
+}
+
+type IndexPlanParams struct {
 	MaxPartitionsPerPIndex int64 `json:"maxPartitionsPerPIndex"`
 }
 
-type FullTextSearchIndexParams struct {
-	DocConfig FullTextSearchIndexDocConfig `json:"doc_config"`
-	Mapping   FullTextSearchIndexMapping   `json:"mapping"`
-	Store     FullTextSearchIndexStore     `json:"store"`
+type IndexParams struct {
+	DocConfig IndexDocConfig `json:"doc_config"`
+	Mapping   IndexMapping   `json:"mapping"`
+	Store     IndexStore     `json:"store"`
 }
 
-type FullTextSearchIndexDocConfig struct {
+type IndexDocConfig struct {
 	DocIDPrefixDelimiter string `json:"docid_prefix_delim"`
 	DocIDRegexp          string `json:"docid_regexp"`
 	Mode                 string `json:"mode"`
 	TypeField            string `json:"type_field"`
 }
 
-type FullTextSearchIndexMapping struct {
-	DefaultAnalyzer       string                            `json:"default_analyzer"`
-	DefaultDatetimeParser string                            `json:"default_datetime_parser"`
-	DefaultField          string                            `json:"default_field"`
-	DefaultMapping        FullTextSearchIndexDefaultMapping `json:"default_mapping"`
-	DefaultType           string                            `json:"default_type"`
-	DocvaluesDynamic      bool                              `json:"docvalues_dynamic"`
-	IndexDynamic          bool                              `json:"index_dynamic"`
-	StoreDynamic          bool                              `json:"store_dynamic"`
-	TypeField             string                            `json:"type_field"`
+type IndexMapping struct {
+	DefaultAnalyzer       string              `json:"default_analyzer"`
+	DefaultDatetimeParser string              `json:"default_datetime_parser"`
+	DefaultField          string              `json:"default_field"`
+	DefaultMapping        IndexDefaultMapping `json:"default_mapping"`
+	DefaultType           string              `json:"default_type"`
+	DocvaluesDynamic      bool                `json:"docvalues_dynamic"`
+	IndexDynamic          bool                `json:"index_dynamic"`
+	StoreDynamic          bool                `json:"store_dynamic"`
+	TypeField             string              `json:"type_field"`
 }
 
-type FullTextSearchIndexDefaultMapping struct {
+type IndexDefaultMapping struct {
 	Dynamic bool `json:"dynamic"`
 	Enabled bool `json:"enabled"`
 }
 
-type FullTextSearchIndexStore struct {
+type IndexStore struct {
 	IndexType   string `json:"indexType"`
 	KVStoreName string `json:"kvStoreName"`
 }
 
-type FullTextSearchIndexMeta struct {
+type IndexMeta struct {
 	Name                 string
 	SourceType           string
 	SourceName           string
@@ -255,7 +265,7 @@ type FullTextSearchIndexMeta struct {
 	TypeField            string
 }
 
-func DefaultFullTextSearchIndexDefinition(meta FullTextSearchIndexMeta) (*FullTextSearchIndexDefinition, error) {
+func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, error) {
 	if meta.Name == "" {
 		return nil, errors.New("index name must set")
 	}
@@ -266,20 +276,20 @@ func DefaultFullTextSearchIndexDefinition(meta FullTextSearchIndexMeta) (*FullTe
 		return nil, errors.New("source name must set")
 	}
 
-	var ftsDef = &FullTextSearchIndexDefinition{
+	var ftsDef = &IndexDefinition{
 		Type:       "fulltext-index",
 		Name:       meta.Name,
 		SourceType: meta.SourceType,
 		SourceName: meta.SourceName,
-		PlanParams: FullTextSearchIndexPlanParams{
+		PlanParams: IndexPlanParams{
 			MaxPartitionsPerPIndex: 171,
 		},
-		Params: FullTextSearchIndexParams{
-			Mapping: FullTextSearchIndexMapping{
+		Params: IndexParams{
+			Mapping: IndexMapping{
 				DefaultAnalyzer:       "standard",
 				DefaultDatetimeParser: "dateTimeOptional",
 				DefaultField:          "_all",
-				DefaultMapping: FullTextSearchIndexDefaultMapping{
+				DefaultMapping: IndexDefaultMapping{
 					Dynamic: true,
 					Enabled: true,
 				},
@@ -289,7 +299,7 @@ func DefaultFullTextSearchIndexDefinition(meta FullTextSearchIndexMeta) (*FullTe
 				StoreDynamic:     true,
 				TypeField:        "_type",
 			},
-			Store: FullTextSearchIndexStore{
+			Store: IndexStore{
 				IndexType:   "scorch",
 				KVStoreName: "",
 			},
@@ -298,21 +308,21 @@ func DefaultFullTextSearchIndexDefinition(meta FullTextSearchIndexMeta) (*FullTe
 
 	switch {
 	case meta.DocIDPrefixDelimiter != "":
-		ftsDef.Params.DocConfig = FullTextSearchIndexDocConfig{
+		ftsDef.Params.DocConfig = IndexDocConfig{
 			DocIDPrefixDelimiter: meta.DocIDPrefixDelimiter,
 			Mode:                 "docid_prefix",
 			DocIDRegexp:          "",
 			TypeField:            "",
 		}
 	case meta.DocIDRegexp != "":
-		ftsDef.Params.DocConfig = FullTextSearchIndexDocConfig{
+		ftsDef.Params.DocConfig = IndexDocConfig{
 			DocIDPrefixDelimiter: "",
 			Mode:                 "docid_regexp",
 			DocIDRegexp:          meta.DocIDRegexp,
 			TypeField:            "",
 		}
 	case meta.TypeField != "":
-		ftsDef.Params.DocConfig = FullTextSearchIndexDocConfig{
+		ftsDef.Params.DocConfig = IndexDocConfig{
 			DocIDPrefixDelimiter: "",
 			Mode:                 "type_field",
 			DocIDRegexp:          "",
@@ -323,7 +333,7 @@ func DefaultFullTextSearchIndexDefinition(meta FullTextSearchIndexMeta) (*FullTe
 	return ftsDef, nil
 }
 
-func (h *Handler) CreateFullTextSearchIndex(def *FullTextSearchIndexDefinition) error {
+func (h *Handler) CreateFullTextSearchIndex(def *IndexDefinition) error {
 	body, err := json.Marshal(def)
 	if err != nil {
 		return err
@@ -341,7 +351,15 @@ func (h *Handler) CreateFullTextSearchIndex(def *FullTextSearchIndexDefinition) 
 	if err != nil {
 		return err
 	}
-	log.Println(string(respbody))
+
+	var ar apiResponse
+	err = json.Unmarshal(respbody, &ar)
+	if err != nil {
+		return err
+	}
+	if ar.Status == "fail" {
+		return errors.New(ar.Error)
+	}
 
 	return nil
 }
@@ -361,28 +379,43 @@ func (h *Handler) DeleteFullTextSearchIndex(indexName string) error {
 	if err != nil {
 		return err
 	}
-	log.Println(string(respbody))
+
+	var ar apiResponse
+	err = json.Unmarshal(respbody, &ar)
+	if err != nil {
+		return err
+	}
+	if ar.Status == "fail" {
+		return errors.New(ar.Error)
+	}
 
 	return nil
 }
 
-func (h *Handler) InspectFullTextSearchIndex(indexName string) (bool, error) {
+func (h *Handler) InspectFullTextSearchIndex(indexName string) (bool, *IndexDefinition, error) {
 	req, _ := http.NewRequest("GET", h.fullTestSearchURL(""), nil)
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := h.http.Do(req)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 	defer resp.Body.Close()
 
 	respbody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
-	log.Println(string(respbody))
-	return false, nil
+	var ar apiResponse
+	err = json.Unmarshal(respbody, &ar)
+	if err != nil {
+		return false, nil, err
+	}
+	if v, ok := ar.IndexDefs.IndexDefs[indexName]; ok {
+		return true, &v, nil
+	}
+	return false, nil, nil
 }
 
 func (h *Handler) fullTestSearchURL(indexName string) string {

@@ -22,16 +22,18 @@ func TestSearchQuery(t *testing.T) {
 }
 
 func TestCreateFullTextSearchIndex(t *testing.T) {
-	h := New(&Configuration{})
-	h.InspectFullTextSearchIndex("order_fts_idx")
+	indexName := "order_fts_idx"
 
-	err := h.DeleteFullTextSearchIndex("order_fts_idx")
-	if err != nil {
-		t.Fatal(err)
+	h := New(&Configuration{})
+	if ok, _, _ := h.InspectFullTextSearchIndex(indexName); ok {
+		err := h.DeleteFullTextSearchIndex(indexName)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
-	def, err := DefaultFullTextSearchIndexDefinition(FullTextSearchIndexMeta{
-		Name:                 "order_fts_idx",
+	def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+		Name:                 indexName,
 		SourceType:           "couchbase",
 		SourceName:           "company",
 		DocIDPrefixDelimiter: "::",
@@ -48,7 +50,7 @@ func TestCreateFullTextSearchIndex(t *testing.T) {
 func TestSimpleSearchMatch(t *testing.T) {
 	placeholderInit()
 
-	for i := 0; i< 10; i++ {
+	for i := 0; i < 10; i++ {
 		order := newTestStruct1()
 		_, err := placeholderBucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
