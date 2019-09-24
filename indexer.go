@@ -13,11 +13,6 @@ const (
 	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
-type indexer struct {
-	bucket        *gocb.Bucket
-	bucketManager *gocb.BucketManager
-}
-
 func (h *Handler) Index(v interface{}) error {
 	if err := h.bucketManager.CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)
