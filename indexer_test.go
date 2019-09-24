@@ -27,7 +27,7 @@ func init() {
 		Password: "password",
 	})
 	bucket, _ := cluster.OpenBucket(bucketName, "")
-	i = NewIndexer(bucket)
+	i = NewIndexer(bucket, "Administrator", "password")
 }
 
 func TestIndex(t *testing.T) {

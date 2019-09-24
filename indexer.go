@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	BucketUsername = ""
-	BucketPassword = ""
-	TagJson        = "json"
-	TagIndexable   = "indexable"
-	TagReferenced  = "referenced"
+	//BucketUsername = "Administrator"
+	//BucketPassword = "password"
+	TagJson       = "json"
+	TagIndexable  = "indexable"
+	TagReferenced = "referenced"
 )
 
 type indexer struct {
@@ -20,7 +20,7 @@ type indexer struct {
 	bucketManager *gocb.BucketManager
 }
 
-func NewIndexer(b *gocb.Bucket) *indexer {
+func NewIndexer(b *gocb.Bucket, BucketUsername, BucketPassword string) *indexer {
 	return &indexer{bucket: b, bucketManager: b.Manager(BucketUsername, BucketPassword)}
 }
 
@@ -31,33 +31,13 @@ func (i *indexer) Index(v interface{}) error {
 
 	t := reflect.TypeOf(v)
 
-	indexable, _ := goDeep(t)
+	indexable, references := goDeep(t)
 
 	if err := makeIndex(i.bucketManager, t.Name(), indexable); err != nil {
 		return err
 	}
 
-	//if err := makeReference(i.bucketManager, v, referenced); err != nil {
-	//	return err
-	//}
-
-	return nil
-}
-
-func (i *indexer) Reindex(v interface{}) error {
-	if err := i.bucketManager.CreatePrimaryIndex("", true, false); err != nil {
-		log.Fatalf("Error when create primary index %+v", err)
-	}
-
-	t := reflect.TypeOf(v)
-	indexName := t.Name()
-	if err := i.bucketManager.DropIndex(indexName, false); err != nil {
-		log.Printf("Error when dropping old secondary index %+v", err)
-	}
-
-	indexed, _ := goDeep(t)
-
-	if err := makeIndex(i.bucketManager, indexName, indexed); err != nil {
+	if err := makeReference(i.bucketManager, v, references); err != nil {
 		return err
 	}
 
@@ -98,23 +78,5 @@ func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []st
 }
 
 func makeReference(bm *gocb.BucketManager, v interface{}, referenced []string) error {
-	dd := &gocb.DesignDocument{
-		Name: "landmarks",
-		Views: map[string]gocb.View{
-			"by_country": {
-				Map: "function (doc, meta) { if (doc.type == 'landmark') { emit([doc.country, doc.city], null); } }",
-			},
-			"by_activity": {
-				Map:    "function (doc, meta) { if (doc.type == 'landmark') { emit(doc.activity, null); } }",
-				Reduce: "_count",
-			},
-		},
-		SpatialViews: map[string]gocb.View{
-			"by_coordinates": {
-				Map: "function (doc, meta) { if (doc.type == 'landmark') { emit([doc.geo.lon, doc.geo.lat], null); } }",
-			},
-		},
-	}
-
-	return bm.InsertDesignDocument(dd)
+	return nil
 }
