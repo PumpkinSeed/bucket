@@ -3,9 +3,10 @@ package odatas
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/couchbase/gocb"
 	"github.com/couchbase/gocb/cbft"
-	"time"
 )
 
 const (

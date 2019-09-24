@@ -3,9 +3,10 @@ package odatas
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/brianvoe/gofakeit"
 	"testing"
 	"time"
+
+	"github.com/brianvoe/gofakeit"
 )
 
 func init() {
@@ -57,9 +58,9 @@ func TestConjuncts(t *testing.T) {
 
 func TestRangeQuery(t *testing.T) {
 	rq := RangeQuery{
-		StartAsTime:    time.Now().Add(-2000*time.Hour),
-		EndAsTime:      time.Now().Add(-500*time.Hour),
-		Field:          "something",
+		StartAsTime: time.Now().Add(-2000 * time.Hour),
+		EndAsTime:   time.Now().Add(-500 * time.Hour),
+		Field:       "something",
 	}
 
 	err := rq.Setup()
