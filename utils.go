@@ -1,9 +1,11 @@
 package odatas
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/brianvoe/gofakeit"
 	"github.com/rs/xid"
+	"net/http"
 	"time"
 )
 
@@ -45,7 +47,7 @@ type testStruct1 struct {
 	PaymentTransactionId         string
 }
 
-func NewTestStruct1() testStruct1 {
+func newTestStruct1() testStruct1 {
 	addr := gofakeit.Address()
 	name := gofakeit.Name()
 	return testStruct1{
@@ -77,10 +79,19 @@ func NewTestStruct1() testStruct1 {
 	}
 }
 
-func EmptyString() string {
+func emptyString() string {
 	return ""
 }
 
-func EmptyBool() bool {
+func emptyBool() bool {
 	return false
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func setupBasicAuth(req *http.Request) {
+	req.Header.Add("Authorization","Basic " + basicAuth("Administrator","password"))
 }

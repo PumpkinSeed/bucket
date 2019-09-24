@@ -22,7 +22,10 @@ func TestSearchQuery(t *testing.T) {
 }
 
 func TestCreateFullTextSearchIndex(t *testing.T) {
-	err := DeleteFullTextSearchIndex("order_fts_idx")
+	h := New(&Configuration{})
+	h.InspectFullTextSearchIndex("order_fts_idx")
+
+	err := h.DeleteFullTextSearchIndex("order_fts_idx")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +39,7 @@ func TestCreateFullTextSearchIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = CreateFullTextSearchIndex(def)
+	err = h.CreateFullTextSearchIndex(def)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +49,7 @@ func TestSimpleSearchMatch(t *testing.T) {
 	placeholderInit()
 
 	for i := 0; i< 10; i++ {
-		order := NewTestStruct1()
+		order := newTestStruct1()
 		_, err := placeholderBucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)

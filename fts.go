@@ -2,7 +2,6 @@ package odatas
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -139,57 +138,65 @@ func (s *SearchQuery) Setup() error {
 
 	switch {
 	case s.Match != "":
-		s.MatchPhrase = EmptyString()
-		s.Term = EmptyString()
-		s.Prefix = EmptyString()
-		s.Regexp = EmptyString()
-		s.Wildcard = EmptyString()
-		s.Bool = EmptyBool()
+		s.MatchPhrase = emptyString()
+		s.Term = emptyString()
+		s.Prefix = emptyString()
+		s.Regexp = emptyString()
+		s.Wildcard = emptyString()
+		s.Bool = emptyBool()
 	case s.MatchPhrase != "":
-		s.Match = EmptyString()
-		s.Term = EmptyString()
-		s.Prefix = EmptyString()
-		s.Regexp = EmptyString()
-		s.Wildcard = EmptyString()
-		s.Bool = EmptyBool()
+		s.Match = emptyString()
+		s.Term = emptyString()
+		s.Prefix = emptyString()
+		s.Regexp = emptyString()
+		s.Wildcard = emptyString()
+		s.Bool = emptyBool()
 	case s.Term != "":
-		s.Match = EmptyString()
-		s.MatchPhrase = EmptyString()
-		s.Prefix = EmptyString()
-		s.Regexp = EmptyString()
-		s.Wildcard = EmptyString()
-		s.Bool = EmptyBool()
+		s.Match = emptyString()
+		s.MatchPhrase = emptyString()
+		s.Prefix = emptyString()
+		s.Regexp = emptyString()
+		s.Wildcard = emptyString()
+		s.Bool = emptyBool()
 	case s.Prefix != "":
-		s.Match = EmptyString()
-		s.MatchPhrase = EmptyString()
-		s.Term = EmptyString()
-		s.Regexp = EmptyString()
-		s.Wildcard = EmptyString()
-		s.Bool = EmptyBool()
+		s.Match = emptyString()
+		s.MatchPhrase = emptyString()
+		s.Term = emptyString()
+		s.Regexp = emptyString()
+		s.Wildcard = emptyString()
+		s.Bool = emptyBool()
 	case s.Regexp != "":
-		s.Match = EmptyString()
-		s.MatchPhrase = EmptyString()
-		s.Term = EmptyString()
-		s.Prefix = EmptyString()
-		s.Wildcard = EmptyString()
-		s.Bool = EmptyBool()
+		s.Match = emptyString()
+		s.MatchPhrase = emptyString()
+		s.Term = emptyString()
+		s.Prefix = emptyString()
+		s.Wildcard = emptyString()
+		s.Bool = emptyBool()
 	case s.Wildcard != "":
-		s.Match = EmptyString()
-		s.MatchPhrase = EmptyString()
-		s.Term = EmptyString()
-		s.Prefix = EmptyString()
-		s.Regexp = EmptyString()
-		s.Bool = EmptyBool()
+		s.Match = emptyString()
+		s.MatchPhrase = emptyString()
+		s.Term = emptyString()
+		s.Prefix = emptyString()
+		s.Regexp = emptyString()
+		s.Bool = emptyBool()
 		//case s.Bool.Valid:
-		//	s.Match = EmptyString()
-		//	s.MatchPhrase = EmptyString()
-		//	s.Term = EmptyString()
-		//	s.Prefix = EmptyString()
-		//	s.Regexp = EmptyString()
-		//	s.Wildcard = EmptyString()
+		//	s.Match = emptyString()
+		//	s.MatchPhrase = emptyString()
+		//	s.Term = emptyString()
+		//	s.Prefix = emptyString()
+		//	s.Regexp = emptyString()
+		//	s.Wildcard = emptyString()
 	}
 	return nil
 }
+
+/*
+	Index of FTS
+*/
+
+const (
+	ftsEndpoint = "/_p/fts/api/index"
+)
 
 type FullTextSearchIndexDefinition struct {
 	Type       string                        `json:"type"`
@@ -316,20 +323,15 @@ func DefaultFullTextSearchIndexDefinition(meta FullTextSearchIndexMeta) (*FullTe
 	return ftsDef, nil
 }
 
-func CreateFullTextSearchIndex(def *FullTextSearchIndexDefinition) error {
-	domain := "http://localhost:8091"
-	endpoint := "/_p/fts/api/index/"
-	url := fmt.Sprintf("%s%s%s", domain, endpoint, def.Name)
-
+func (h *Handler) CreateFullTextSearchIndex(def *FullTextSearchIndexDefinition) error {
 	body, err := json.Marshal(def)
 	if err != nil {
 		return err
 	}
-	req, _ := http.NewRequest("PUT", url, bytes.NewBuffer(body))
+	req, _ := http.NewRequest("PUT", h.fullTestSearchURL(def.Name), bytes.NewBuffer(body))
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
-	client := http.DefaultClient
-	resp, err := client.Do(req)
+	resp, err := h.http.Do(req)
 	if err != nil {
 		return err
 	}
@@ -344,16 +346,12 @@ func CreateFullTextSearchIndex(def *FullTextSearchIndexDefinition) error {
 	return nil
 }
 
-func DeleteFullTextSearchIndex(indexName string) error {
-	domain := "http://localhost:8091"
-	endpoint := "/_p/fts/api/index/"
-	url := fmt.Sprintf("%s%s%s", domain, endpoint, indexName)
-
-	req, _ := http.NewRequest("DELETE", url, nil)
+func (h *Handler) DeleteFullTextSearchIndex(indexName string) error {
+	req, _ := http.NewRequest("DELETE", h.fullTestSearchURL(indexName), nil)
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
-	client := http.DefaultClient
-	resp, err := client.Do(req)
+
+	resp, err := h.http.Do(req)
 	if err != nil {
 		return err
 	}
@@ -368,11 +366,28 @@ func DeleteFullTextSearchIndex(indexName string) error {
 	return nil
 }
 
-func basicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+func (h *Handler) InspectFullTextSearchIndex(indexName string) (bool, error) {
+	req, _ := http.NewRequest("GET", h.fullTestSearchURL(""), nil)
+	setupBasicAuth(req)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := h.http.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	respbody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+	log.Println(string(respbody))
+	return false, nil
 }
 
-func setupBasicAuth(req *http.Request) {
-	req.Header.Add("Authorization","Basic " + basicAuth("Administrator","password"))
+func (h *Handler) fullTestSearchURL(indexName string) string {
+	if indexName == "" {
+		return fmt.Sprintf("%s%s", h.httpAddress, ftsEndpoint)
+	}
+	return fmt.Sprintf("%s%s/%s", h.httpAddress, ftsEndpoint, indexName)
 }
