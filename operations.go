@@ -116,7 +116,7 @@ func (h *Handler) Read(id, t string, ptr interface{}) error {
 
 func (h *Handler) Remove(id, t string, ptr interface{}) error {
 	typs := []string{t}
-	e := h.remove(ptr, id, typs)
+	e := h.getDocumentTypes(ptr, id, typs)
 	if e != nil {
 		return e
 	}
@@ -130,7 +130,7 @@ func (h *Handler) Remove(id, t string, ptr interface{}) error {
 	return nil
 }
 
-func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
+func (h *Handler) getDocumentTypes(ptr interface{}, id string, typs []string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
 	if typ.Kind() != reflect.Struct {
@@ -148,7 +148,7 @@ func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
 		structFieldKind := structField.Kind()
 		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
 		if structFieldKind == reflect.Struct {
-			err := h.remove(structField.Addr().Interface(), id, typs)
+			err := h.getDocumentTypes(structField.Addr().Interface(), id, typs)
 			if err != nil {
 				return err
 			}
@@ -159,7 +159,7 @@ func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
 			inputFieldName = typeField.Name
 
 			if structFieldKind == reflect.Struct {
-				err := h.remove(structField.Addr().Interface(), id, typs)
+				err := h.getDocumentTypes(structField.Addr().Interface(), id, typs)
 				if err != nil {
 					return err
 				}
@@ -176,7 +176,19 @@ func Upsert() error {
 	return nil
 }
 
-func Touch() error {
+func (h *Handler) Touch(id, t string, ptr interface{},ttl int) error {
+	types := []string{t}
+	e := h.getDocumentTypes(ptr, id, types)
+	if e != nil {
+		return e
+	}
+
+	for _, typ := range types {
+		_, err := h.bucket.Touch(typ+"::"+id, 0, uint32(ttl))
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

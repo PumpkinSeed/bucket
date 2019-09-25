@@ -114,6 +114,45 @@ func TestRead(t *testing.T) {
 	fmt.Printf("%+v\n", ws)
 }
 
+func TestTouch(t *testing.T) {
+	_, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ws := webshop{
+		ID:       0,
+		RoleID:   0,
+		Name:     "",
+		Email:    "",
+		Password: "",
+		Product: product{
+			ID:          0,
+			UserID:      0,
+			StoreID:     0,
+			Name:        "",
+			Description: "",
+			Slug:        "",
+			Price:       0,
+			SalePrice:   0,
+			CurrencyID:  0,
+			OnSale:      0,
+			Status:      "",
+		},
+		Store: store{
+			ID:          0,
+			UserID:      0,
+			Name:        "",
+			Description: "",
+		},
+	}
+	splitedID := strings.Split(ID, "::")
+	if err := h.Touch(splitedID[1], splitedID[0], &ws,10); err != nil {
+		t.Fail()
+	}
+	fmt.Printf("%+v\n", ws)
+}
+
 func BenchmarkInsertEmb(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _, _ = testInsert()
