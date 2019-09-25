@@ -3,39 +3,13 @@ package odatas
 import (
 	"errors"
 	"fmt"
-	"github.com/rs/xid"
-	"gopkg.in/couchbase/gocb.v1"
 	"strconv"
 	"strings"
 
+	"github.com/rs/xid"
+
 	"reflect"
 )
-
-var (
-	placeholderBucket *gocb.Bucket
-)
-
-func placeholderInit() {
-	if placeholderBucket == nil {
-		cb, err := gocb.Connect("couchbase://localhost")
-		if err != nil {
-			panic(err)
-		}
-
-		err = cb.Authenticate(gocb.PasswordAuthenticator{
-			Username: "Administrator",
-			Password: "password",
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		placeholderBucket, err = cb.OpenBucket("company", "")
-		if err != nil {
-			panic(err)
-		}
-	}
-}
 
 func Insert(q interface{}, typ string) error {
 	err := write(q, typ, "")
@@ -59,13 +33,13 @@ func write(q interface{}, typ, id string) error {
 			if v.Field(i).Kind() == reflect.Struct {
 				a := v.Type().Field(i)
 				b := v.Field(i).Interface()
-				fieldName := strings.Split(a.Tag.Get("json"),",")[0]
+				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
 				err := write(b, fieldName, id)
 				if err != nil {
 					return err
 				}
 			} else {
-				k := strings.Split(v.Type().Field(i).Tag.Get("json"),",")[0]
+				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
 				val := v.Field(i)
 				fields[k] = fmt.Sprintf("%v", val)
 			}
@@ -83,8 +57,7 @@ func write(q interface{}, typ, id string) error {
 	return err
 }
 
-
-func read(id,t string, ptr interface{}) error {
+func read(id, t string, ptr interface{}) error {
 	documentID := t + "::" + id
 	var doc interface{}
 
@@ -111,10 +84,10 @@ func read(id,t string, ptr interface{}) error {
 
 		structFieldKind := structField.Kind()
 		//inputFieldName := typeField.Tag.Get("json")
-		inputFieldName := strings.Split(typeField.Tag.Get("json"),",")[0]
+		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
 		//inputFieldName := typeField.Name
 		if structFieldKind == reflect.Struct {
-			err := read(id,inputFieldName, structField.Addr().Interface())
+			err := read(id, inputFieldName, structField.Addr().Interface())
 			if err != nil {
 				return err
 			}
@@ -125,7 +98,7 @@ func read(id,t string, ptr interface{}) error {
 			inputFieldName = typeField.Name
 
 			if structFieldKind == reflect.Struct {
-				err := read( id,inputFieldName, structField.Addr().Interface())
+				err := read(id, inputFieldName, structField.Addr().Interface())
 				if err != nil {
 					return err
 				}
@@ -134,16 +107,16 @@ func read(id,t string, ptr interface{}) error {
 		}
 
 		var inputValue string
-		 for _,key := range reflect.ValueOf(doc).MapKeys() {
-			 val := reflect.Indirect(key).Interface()
-		 	if inputFieldName == val {
-				inputValue = fmt.Sprintf("%v",reflect.ValueOf(doc).MapIndex(key).Interface())
+		for _, key := range reflect.ValueOf(doc).MapKeys() {
+			val := reflect.Indirect(key).Interface()
+			if inputFieldName == val {
+				inputValue = fmt.Sprintf("%v", reflect.ValueOf(doc).MapIndex(key).Interface())
 			}
-		 }
+		}
 
-			if err := setWithProperType(typeField.Type.Kind(), inputValue, structField); err != nil {
-				return err
-			}
+		if err := setWithProperType(typeField.Type.Kind(), inputValue, structField); err != nil {
+			return err
+		}
 
 	}
 	return nil

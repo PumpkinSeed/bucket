@@ -3,6 +3,7 @@ module bitbucket.com/fluidpay/odatas
 go 1.12
 
 require (
+	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/couchbase/gocb v1.6.3
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.1 // indirect
