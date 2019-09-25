@@ -3,6 +3,7 @@ package odatas
 import (
 	"errors"
 	"fmt"
+	"gopkg.in/couchbase/gocb.v1"
 	"strconv"
 	"strings"
 
@@ -168,6 +169,27 @@ func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
 		typs = append(typs, inputFieldName)
 	}
 	return nil
+}
+
+func Upsert() error {
+
+	return nil
+}
+
+func Touch() error {
+	return nil
+}
+
+func GetAndTouch() error {
+	return nil
+}
+
+func (h *Handler) Ping() (*gocb.PingReport,error){
+	report, err := h.bucket.Ping(nil)
+	if err != nil {
+		return nil, err
+	}
+	return report, nil
 }
 
 func setWithProperType(valueKind reflect.Kind, val string, structField reflect.Value) error {
