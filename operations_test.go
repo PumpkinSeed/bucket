@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 func Test(t *testing.T) {
@@ -111,4 +112,39 @@ func TestRead(t *testing.T) {
 		t.Fail()
 	}
 	fmt.Printf("%+v\n", ws)
+}
+
+func BenchmarkInsertEmb(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _, _ = testInsert()
+	}
+}
+
+func BenchmarkInsert(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _ = h.Insert(newTestStruct1(), "webshop")
+	}
+}
+
+func BenchmarkGetSingle(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		startInsert := time.Now()
+		ID, _ := h.Insert(newTestStruct1(), "webshop")
+		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
+		start := time.Now()
+		_ = h.Read(ID, "webshop", webshop{})
+		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
+	}
+}
+
+func BenchmarkGetEmbedded(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		startInsert := time.Now()
+		_, ID, _ := testInsert()
+		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
+		split := strings.Split(ID, "::")
+		start := time.Now()
+		_ = h.Read(split[1], split[0], &webshop{})
+		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
+	}
 }

@@ -144,6 +144,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 	case reflect.String:
 		structField.SetString(val)
 	case reflect.Ptr:
+		// @TODO extending
 		switch structField.Type().String() {
 		case "*int64":
 			return setPtrIntField(val, 64, structField)
