@@ -6,57 +6,60 @@ import (
 	"gopkg.in/couchbase/gocb.v1"
 )
 
-type State struct {
-	DocumentTypes map[string]string
+type state struct {
+	documentTypes map[string]string
 
-	bucket     *gocb.Bucket
-	bucketName string
+	bucket    *gocb.Bucket
 	separator string
 }
 
-func NewState(bucket *gocb.Bucket, bucketName, separator string) *State {
-	var s State
-	s.DocumentTypes = make(map[string]string)
+func newState(bucket *gocb.Bucket, separator string) *state {
+	var s state
+	s.documentTypes = make(map[string]string)
 	s.bucket = bucket
-	s.bucketName = bucketName
 	s.separator = separator
 
 	return &s
 }
 
-func (s *State) Load() error {
-	q := gocb.NewN1qlQuery("SELECT * FROM " + s.bucketName)
-	rows, err := s.bucket.ExecuteN1qlQuery(q, nil)
-	var val interface{}
+func (s *state) load() error {
+	_, err := s.bucket.Get("documentType", s.documentTypes)
 	if err != nil {
 		return err
 	}
-	for rows.Next(&val) {
-		
-	}
-
 	return nil
 }
 
-func (s *State) NewType(name, prefix string) error {
-	if _, ok := s.DocumentTypes[name]; ok {
+func (s *state) newType(name, prefix string) error {
+	if _, ok := s.documentTypes[name]; ok {
 		return errors.New("document type already exists")
 	}
 
-	s.DocumentTypes[name] = prefix + s.separator
+	s.documentTypes[name] = prefix + s.separator
+	_, err := s.bucket.Upsert("documentType", s.documentTypes, 0)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *State) GetType(name string) (string, error) {
-	if v, ok := s.DocumentTypes[name]; ok {
+func (s *state) getType(name string) (string, error) {
+	if v, ok := s.documentTypes[name]; ok {
 		return v, nil
 	}
 	return "", errors.New("document type doesn't exist")
 }
 
-func (s *State) DeleteType(name string) error {
-	if _, ok := s.DocumentTypes[name]; ok {
-		delete(s.DocumentTypes, name)
+func (s *state) deleteType(name string) error {
+	if _, ok := s.documentTypes[name]; ok {
+		delete(s.documentTypes, name)
+
+		_, err := s.bucket.Upsert("documentType", s.documentTypes, 0)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 

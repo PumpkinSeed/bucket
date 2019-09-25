@@ -1,9 +1,13 @@
 package odatas
 
-import "gopkg.in/couchbase/gocb.v1"
+import (
+	"context"
+	
+	"gopkg.in/couchbase/gocb.v1"
+)
 
 type Handler struct {
-	state *State
+	state *state
 
 	bucket *gocb.Bucket
 }
@@ -38,8 +42,8 @@ func New(c *Configuration) Handler {
 		panic(err)
 	}
 
-	s := NewState(b, c.Bucket, c.Separator)
-	err = s.Load()
+	s := newState(b, c.Separator)
+	err = s.load()
 	if err != nil {
 		panic(err)
 	}
@@ -49,3 +53,35 @@ func New(c *Configuration) Handler {
 		state:  s,
 	}
 }
+
+func (h *Handler) Insert(ctx *context.Context, bucketName, key string, value interface{}) error {
+	prefix, err := h.state.getType(bucketName)
+	if err != nil {
+		if err2 := h.state.newType(bucketName, bucketName); err2 != nil {
+			return err2
+		}
+
+		prefix = bucketName + h.state.separator
+	}
+	if _, err = h.bucket.Upsert(prefix+key, value, 0); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *Handler) Get(ctx *context.Context, bucketName, key string) (interface{}, error) {
+	var res interface{}
+	prefix, err := h.state.getType(bucketName)
+	if err != nil {
+		return res, err
+	}
+
+	_, err = h.bucket.Get(prefix+key, res)
+	if err != nil {
+		return res, err
+	}
+
+	return res, nil
+}
+
