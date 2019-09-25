@@ -30,7 +30,7 @@ type Configuration struct {
 	ConnectionString string `json:"connection_string"`
 }
 
-func New(c *Configuration) Handler {
+func New(c *Configuration) (*Handler, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			Dial: (&net.Dialer{
@@ -43,26 +43,26 @@ func New(c *Configuration) Handler {
 
 	cluster, err := gocb.Connect(c.ConnectionString)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if err := cluster.Authenticate(gocb.PasswordAuthenticator{
 		Username: c.Username,
 		Password: c.Password,
 	}); err != nil {
-		panic(err)
+		return nil, err
 	}
 	bucket, err := cluster.OpenBucket(c.BucketName, "")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return Handler{
+	return &Handler{
 		http:        client,
 		httpAddress: "http://localhost:8091",
 		bucket:      bucket,
 		username:    c.Username,
 		password:    c.Password,
-	}
+	}, nil
 }
 
 func (h *Handler) GetManager() *gocb.BucketManager {
