@@ -10,6 +10,10 @@ import (
 	"github.com/rs/xid"
 )
 
+const (
+	bucketName = "company"
+)
+
 // TestStruct1 is a struct used for testing and represents an order of a webshop
 type testStruct1 struct {
 	Token                        string `json:"token"`
@@ -102,4 +106,13 @@ func basicAuth(username, password string) string {
 
 func setupBasicAuth(req *http.Request) {
 	req.Header.Add("Authorization", "Basic "+basicAuth("Administrator", "password"))
+}
+
+func defaultHandler() Handler {
+	return New(&Configuration{
+		Username:       "Administrator",
+		Password:       "password",
+		BucketName:     bucketName,
+		BucketPassword: "",
+	})
 }

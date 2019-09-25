@@ -41,12 +41,20 @@ func New(c *Configuration) Handler {
 		Timeout: time.Second * 10,
 	}
 
-	cluster, _ := gocb.Connect(c.ConnectionString)
-	_ = cluster.Authenticate(gocb.PasswordAuthenticator{
+	cluster, err := gocb.Connect(c.ConnectionString)
+	if err != nil {
+		panic(err)
+	}
+	if err := cluster.Authenticate(gocb.PasswordAuthenticator{
 		Username: c.Username,
 		Password: c.Password,
-	})
-	bucket, _ := cluster.OpenBucket(c.BucketName, "")
+	}); err != nil {
+		panic(err)
+	}
+	bucket, err := cluster.OpenBucket(c.BucketName, "")
+	if err != nil {
+		panic(err)
+	}
 
 	return Handler{
 		http:        client,

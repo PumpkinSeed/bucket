@@ -11,15 +11,15 @@ import (
 	"reflect"
 )
 
-func Insert(q interface{}, typ string) error {
-	err := write(q, typ, "")
+func (h *Handler) Insert(q interface{}, typ string) (string, error) {
+	documentID, err := h.write(q, typ, "")
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return documentID, nil
 }
 
-func write(q interface{}, typ, id string) error {
+func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 	fields := make(map[string]interface{})
 	if id == "" {
 		id = xid.New().String()
@@ -34,9 +34,9 @@ func write(q interface{}, typ, id string) error {
 				a := v.Type().Field(i)
 				b := v.Field(i).Interface()
 				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
-				err := write(b, fieldName, id)
+				_, err := h.write(b, fieldName, id)
 				if err != nil {
-					return err
+					return "", err
 				}
 			} else {
 				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
@@ -51,17 +51,17 @@ func write(q interface{}, typ, id string) error {
 		//}
 		//fmt.Println(string(jso))
 	} else {
-		return errors.New("not a struct")
+		return "", errors.New("not a struct")
 	}
-	_, err := placeholderBucket.Insert(documentID, fields, 0)
-	return err
+	_, err := h.bucket.Insert(documentID, fields, 0)
+	return documentID, err
 }
 
-func read(id, t string, ptr interface{}) error {
+func (h *Handler) Read(id, t string, ptr interface{}) error {
 	documentID := t + "::" + id
 	var doc interface{}
 
-	_, err := placeholderBucket.Get(documentID, &doc)
+	_, err := h.bucket.Get(documentID, &doc)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func read(id, t string, ptr interface{}) error {
 		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
 		//inputFieldName := typeField.Name
 		if structFieldKind == reflect.Struct {
-			err := read(id, inputFieldName, structField.Addr().Interface())
+			err := h.Read(id, inputFieldName, structField.Addr().Interface())
 			if err != nil {
 				return err
 			}
@@ -98,7 +98,7 @@ func read(id, t string, ptr interface{}) error {
 			inputFieldName = typeField.Name
 
 			if structFieldKind == reflect.Struct {
-				err := read(id, inputFieldName, structField.Addr().Interface())
+				err := h.Read(id, inputFieldName, structField.Addr().Interface())
 				if err != nil {
 					return err
 				}

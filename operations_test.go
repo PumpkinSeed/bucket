@@ -2,18 +2,24 @@ package odatas
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	placeholderInit()
+	if _, _, err := testInsert(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func testInsert() (webshop, string, error) {
 	ws := webshop{
 		ID:       23,
 		RoleID:   25,
 		Name:     "Test",
 		Email:    "test@test.com",
 		Password: "asd",
-		Product:  product{
+		Product: product{
 			ID:          34,
 			UserID:      44,
 			StoreID:     55,
@@ -26,17 +32,15 @@ func Test(t *testing.T) {
 			OnSale:      123,
 			Status:      "active",
 		},
-		Store:    store{
+		Store: store{
 			ID:          55,
 			UserID:      44,
 			Name:        "productshop",
 			Description: "Product shop",
 		},
 	}
-	err := Insert(ws, "webshop")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ID, err := h.Insert(ws, "webshop")
+	return ws, ID, err
 }
 
 type webshop struct {
@@ -71,14 +75,18 @@ type store struct {
 }
 
 func TestRead(t *testing.T) {
-	placeholderInit()
+	_, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	ws := webshop{
 		ID:       0,
 		RoleID:   0,
 		Name:     "",
 		Email:    "",
 		Password: "",
-		Product:  product{
+		Product: product{
 			ID:          0,
 			UserID:      0,
 			StoreID:     0,
@@ -91,15 +99,15 @@ func TestRead(t *testing.T) {
 			OnSale:      0,
 			Status:      "",
 		},
-		Store:    store{
+		Store: store{
 			ID:          0,
 			UserID:      0,
 			Name:        "",
 			Description: "",
 		},
 	}
-	err := read("bm5lf7cudj7ugmucbro0","webshop",&ws )
-	if err != nil {
+	splitedID := strings.Split(ID, "::")
+	if err := h.Read(splitedID[1], splitedID[0], &ws); err != nil {
 		t.Fail()
 	}
 	fmt.Printf("%+v\n", ws)
