@@ -32,8 +32,6 @@ func seed() {
 		log.Print("TestEnv")
 		gofakeit.Seed(time.Now().UnixNano())
 
-
-
 		start := time.Now()
 		if err := th.GetManager().Flush(); err != nil {
 			fmt.Printf("Turn on flush in bucket: %+v\n", err)
@@ -91,8 +89,8 @@ type webshop struct {
 
 type product struct {
 	ID          string `json:"id"`
-	UserID      string    `json:"user_id"`
-	StoreID     string    `json:"store_id"`
+	UserID      string `json:"user_id"`
+	StoreID     string `json:"store_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Slug        string `json:"slug"`
@@ -105,7 +103,7 @@ type product struct {
 
 type store struct {
 	ID          string `json:"id"`
-	UserID      string    `json:"user_id"`
+	UserID      string `json:"user_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
