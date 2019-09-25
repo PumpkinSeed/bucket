@@ -6,6 +6,7 @@ import (
 	"github.com/rs/xid"
 	"gopkg.in/couchbase/gocb.v1"
 	"strconv"
+	"strings"
 
 	"reflect"
 )
@@ -58,12 +59,13 @@ func write(q interface{}, typ, id string) error {
 			if v.Field(i).Kind() == reflect.Struct {
 				a := v.Type().Field(i)
 				b := v.Field(i).Interface()
-				err := write(b, a.Tag.Get("json"), id)
+				fieldName := strings.Split(a.Tag.Get("json"),",")[0]
+				err := write(b, fieldName, id)
 				if err != nil {
 					return err
 				}
 			} else {
-				k := v.Type().Field(i).Tag.Get("json")
+				k := strings.Split(v.Type().Field(i).Tag.Get("json"),",")[0]
 				val := v.Field(i)
 				fields[k] = fmt.Sprintf("%v", val)
 			}
@@ -81,48 +83,14 @@ func write(q interface{}, typ, id string) error {
 	return err
 }
 
-type a struct {
-	ID     int  `json:"id"`
-	UserID int  `json:"user_id"`
-	Name   Name `json:"name"`
-}
-type Name struct {
-	N string `json:"n"`
-}
-
-
-func readTest() error {
-	a := &a{
-		ID:     0,
-		UserID: 0,
-		Name: Name{
-			N: "",
-		},
-	}
-	err := read("1","123",a)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func read(id,t string, ptr interface{}) error {
-	//documentID := t + "::" + id
+	documentID := t + "::" + id
 	var doc interface{}
-	// TODO
-	//_, err := placeholderBucket.Get(documentID, &doc)
-	//if err != nil {
-	//	return err
-	//}
-	type b struct {
-		ID string
-		UserID string
-		Name *Name
-	}
-	doc = &b{
-		ID:     "12",
-		UserID: "23",
-		Name:   &Name{N: "Andor"},
+
+	_, err := placeholderBucket.Get(documentID, &doc)
+	if err != nil {
+		return err
 	}
 
 	typ := reflect.TypeOf(ptr).Elem()
@@ -143,10 +111,10 @@ func read(id,t string, ptr interface{}) error {
 
 		structFieldKind := structField.Kind()
 		//inputFieldName := typeField.Tag.Get("json")
-		inputFieldName := typeField.Name
+		inputFieldName := strings.Split(typeField.Tag.Get("json"),",")[0]
+		//inputFieldName := typeField.Name
 		if structFieldKind == reflect.Struct {
-			fmt.Println(structField.CanAddr())
-			err := read(id,inputFieldName, structField.Addr().Interface())//.Addr())//.Interface())
+			err := read(id,inputFieldName, structField.Addr().Interface())
 			if err != nil {
 				return err
 			}
@@ -164,22 +132,20 @@ func read(id,t string, ptr interface{}) error {
 				continue
 			}
 		}
-		//ITT KOKANYOLTAM //TODO
-		// inputFieldName = "ID"
-		//reflect.Indirect(reflect.ValueOf(doc).FieldByName())
-		input := reflect.Indirect(reflect.ValueOf(doc)).FieldByName(inputFieldName)
-		if !input.IsValid() {
-			continue
-		}
-		inputValue := fmt.Sprintf("%v",input.Interface())
-		fmt.Println(inputValue)
-		fmt.Printf("%T\n", inputValue)
+
+		var inputValue string
+		 for _,key := range reflect.ValueOf(doc).MapKeys() {
+			 val := reflect.Indirect(key).Interface()
+		 	if inputFieldName == val {
+				inputValue = fmt.Sprintf("%v",reflect.ValueOf(doc).MapIndex(key).Interface())
+			}
+		 }
+
 			if err := setWithProperType(typeField.Type.Kind(), inputValue, structField); err != nil {
 				return err
 			}
 
 	}
-	fmt.Println(ptr)
 	return nil
 }
 

@@ -1,8 +1,11 @@
 package odatas
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func TestInsert(t *testing.T) {
+func Test(t *testing.T) {
 	placeholderInit()
 	ws := webshop{
 		ID:       23,
@@ -42,7 +45,7 @@ type webshop struct {
 	Name     string  `json:"name"`
 	Email    string  `json:"email"`
 	Password string  `json:"password"`
-	Product  product `json:"product,omitempty"`
+	Product  product `json:"product"`
 	Store    store   `json:"store,omitempty"`
 }
 
@@ -65,4 +68,39 @@ type store struct {
 	UserID      int    `json:"user_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+}
+
+func TestRead(t *testing.T) {
+	placeholderInit()
+	ws := webshop{
+		ID:       0,
+		RoleID:   0,
+		Name:     "",
+		Email:    "",
+		Password: "",
+		Product:  product{
+			ID:          0,
+			UserID:      0,
+			StoreID:     0,
+			Name:        "",
+			Description: "",
+			Slug:        "",
+			Price:       0,
+			SalePrice:   0,
+			CurrencyID:  0,
+			OnSale:      0,
+			Status:      "",
+		},
+		Store:    store{
+			ID:          0,
+			UserID:      0,
+			Name:        "",
+			Description: "",
+		},
+	}
+	err := read("bm5lf7cudj7ugmucbro0","webshop",&ws )
+	if err != nil {
+		t.Fail()
+	}
+	fmt.Printf("%+v\n", ws)
 }
