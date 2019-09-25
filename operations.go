@@ -113,6 +113,63 @@ func (h *Handler) Read(id, t string, ptr interface{}) error {
 	return nil
 }
 
+func (h *Handler) Remove(id, t string, ptr interface{}) error {
+	typs := []string{t}
+	e := h.remove(ptr, id, typs)
+	if e != nil {
+		return e
+	}
+
+	for _, typ := range typs {
+		_, err := h.bucket.Remove(typ+"::"+id, 0)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
+	typ := reflect.TypeOf(ptr).Elem()
+	val := reflect.ValueOf(ptr).Elem()
+	if typ.Kind() != reflect.Struct {
+		return errors.New("second argument must be a struct")
+	}
+	for i := 0; i < typ.NumField(); i++ {
+		typeField := typ.Field(i)
+		structField := val.Field(i)
+
+		if !structField.CanSet() {
+			fmt.Println("field ", i, "cannot be set")
+			continue
+		}
+
+		structFieldKind := structField.Kind()
+		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
+		if structFieldKind == reflect.Struct {
+			err := h.remove(structField.Addr().Interface(), id, typs)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		if inputFieldName == "" {
+			inputFieldName = typeField.Name
+
+			if structFieldKind == reflect.Struct {
+				err := h.remove(structField.Addr().Interface(), id, typs)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+		}
+		typs = append(typs, inputFieldName)
+	}
+	return nil
+}
+
 func setWithProperType(valueKind reflect.Kind, val string, structField reflect.Value) error {
 	switch valueKind {
 	case reflect.Int:

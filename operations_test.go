@@ -40,7 +40,7 @@ func testInsert() (webshop, string, error) {
 			Description: "Product shop",
 		},
 	}
-	ID, err := h.Insert(ws, "webshop")
+	ID, err := h.Write(ws, "webshop")
 	return ws, ID, err
 }
 
@@ -122,14 +122,14 @@ func BenchmarkInsertEmb(b *testing.B) {
 
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = h.Insert(newTestStruct1(), "webshop")
+		_, _ = h.Write(newTestStruct1(), "webshop")
 	}
 }
 
 func BenchmarkGetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		ID, _ := h.Insert(newTestStruct1(), "webshop")
+		ID, _ := h.Write(newTestStruct1(), "webshop")
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
 		_ = h.Read(ID, "webshop", webshop{})
@@ -145,6 +145,18 @@ func BenchmarkGetEmbedded(b *testing.B) {
 		split := strings.Split(ID, "::")
 		start := time.Now()
 		_ = h.Read(split[1], split[0], &webshop{})
+		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
+	}
+}
+
+func BenchmarkRemoveEmbedded(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		startInsert := time.Now()
+		_, ID, _ := testInsert()
+		fmt.Printf("Insert: %vns\tRemove: ", time.Since(startInsert).Nanoseconds())
+		split := strings.Split(ID, "::")
+		start := time.Now()
+		_ = h.Remove(split[1], split[0], &webshop{})
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
