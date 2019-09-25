@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/couchbase/gocb"
-	"github.com/couchbase/gocb/cbft"
+	"gopkg.in/couchbase/gocb.v1"
+	"gopkg.in/couchbase/gocb.v1/cbft"
 )
 
 const (

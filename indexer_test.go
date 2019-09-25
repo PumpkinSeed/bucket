@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/couchbase/gocb"
+	"gopkg.in/couchbase/gocb.v1"
 )
 
 func TestIndexCreate(t *testing.T) {
