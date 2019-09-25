@@ -16,6 +16,7 @@ type Configuration struct {
 	Bucket         string `json:"bucket"`
 	BucketUsername string `json:"bucket_username"`
 	BucketPassword string `json:"bucket_password"`
+	Separator      string `json:"separator"`
 }
 
 func New(c *Configuration) Handler {
@@ -37,8 +38,14 @@ func New(c *Configuration) Handler {
 		panic(err)
 	}
 
+	s := NewState(b, c.Bucket, c.Separator)
+	err = s.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	return Handler{
-		bucket:b,
-		state:LoadState(b),
+		bucket: b,
+		state:  s,
 	}
 }
