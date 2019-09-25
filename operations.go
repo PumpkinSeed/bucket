@@ -3,9 +3,10 @@ package odatas
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/couchbase/gocb.v1"
 	"strconv"
 	"strings"
+
+	"github.com/couchbase/gocb"
 
 	"github.com/rs/xid"
 
@@ -184,7 +185,7 @@ func GetAndTouch() error {
 	return nil
 }
 
-func (h *Handler) Ping() (*gocb.PingReport,error){
+func (h *Handler) Ping() (*gocb.PingReport, error) {
 	report, err := h.bucket.Ping(nil)
 	if err != nil {
 		return nil, err
@@ -225,33 +226,33 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 	case reflect.Ptr:
 		switch structField.Type().String() {
 		case "*int":
-			return setPtrIntField(val,0,structField)
+			return setPtrIntField(val, 0, structField)
 		case "*int8":
 			return setPtrIntField(val, 8, structField)
 		case "*int16":
-			return setPtrIntField(val,16,structField)
+			return setPtrIntField(val, 16, structField)
 		case "*int32":
-			return setPtrIntField(val,32,structField)
+			return setPtrIntField(val, 32, structField)
 		case "*int64":
 			return setPtrIntField(val, 64, structField)
 		case "*uint":
-			return setPtrUintField(val,0,structField)
+			return setPtrUintField(val, 0, structField)
 		case "*uint8":
-			return setPtrUintField(val,8,structField)
+			return setPtrUintField(val, 8, structField)
 		case "*uint16":
-			return setPtrUintField(val,16,structField)
+			return setPtrUintField(val, 16, structField)
 		case "*uint32":
-			return setPtrUintField(val,32,structField)
+			return setPtrUintField(val, 32, structField)
 		case "*uint64":
-			return setPtrUintField(val,64,structField)
+			return setPtrUintField(val, 64, structField)
 		case "*string":
 			structField.Set(reflect.ValueOf(&val))
 		case "*bool":
-			return setPtrBoolField(val,structField)
+			return setPtrBoolField(val, structField)
 		case "*float32":
-			return setPtrFloatField(val,32,structField)
+			return setPtrFloatField(val, 32, structField)
 		case "*float64":
-			return setPtrFloatField(val,64,structField)
+			return setPtrFloatField(val, 64, structField)
 		default:
 			return errors.New("unknown type")
 		}
@@ -270,23 +271,23 @@ func setPtrIntField(value string, bitSize int, field reflect.Value) error {
 	return err
 }
 
-func setPtrUintField(value string,bitSize int,field reflect.Value) error {
-	uintVal, err := strconv.ParseUint(value,10,bitSize)
+func setPtrUintField(value string, bitSize int, field reflect.Value) error {
+	uintVal, err := strconv.ParseUint(value, 10, bitSize)
 	if err == nil {
 		field.Set(reflect.ValueOf(&uintVal))
 	}
 	return err
 }
 
-func setPtrFloatField(value string,bitsize int,field reflect.Value) error {
-	floatVal, err := strconv.ParseFloat(value,bitsize)
+func setPtrFloatField(value string, bitsize int, field reflect.Value) error {
+	floatVal, err := strconv.ParseFloat(value, bitsize)
 	if err == nil {
 		field.Set(reflect.ValueOf(&floatVal))
 	}
 	return err
 }
 
-func setPtrBoolField(value string,field reflect.Value) error {
+func setPtrBoolField(value string, field reflect.Value) error {
 	boolVal, err := strconv.ParseBool(value)
 	if err == nil {
 		field.Set(reflect.ValueOf(&boolVal))

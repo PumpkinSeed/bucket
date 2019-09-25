@@ -1,11 +1,11 @@
 package odatas
 
 import (
-	"gopkg.in/couchbase/gocb.v1"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/couchbase/gocb"
 )
 
 type Handler struct {
