@@ -11,7 +11,7 @@ import (
 	"reflect"
 )
 
-func (h *Handler) Insert(q interface{}, typ string) (string, error) {
+func (h *Handler) Write(q interface{}, typ string) (string, error) {
 	documentID, err := h.write(q, typ, "")
 	if err != nil {
 		return "", err
@@ -26,13 +26,13 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 	}
 	documentID := typ + "::" + id
 
-	//var jso []byte
 	if reflect.ValueOf(q).Kind() == reflect.Struct {
 		v := reflect.ValueOf(q)
 		for i := 0; i < v.NumField(); i++ {
-			if v.Field(i).Kind() == reflect.Struct {
+			field := v.Field(i)
+			if field.Kind() == reflect.Struct {
 				a := v.Type().Field(i)
-				b := v.Field(i).Interface()
+				b := field.Interface()
 				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
 				_, err := h.write(b, fieldName, id)
 				if err != nil {
@@ -40,16 +40,9 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 				}
 			} else {
 				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
-				val := v.Field(i)
-				fields[k] = fmt.Sprintf("%v", val)
+				fields[k] = fmt.Sprintf("%v", field)
 			}
 		}
-
-		//jso, err := json.Marshal(fields)
-		//if err != nil {
-		//	return err
-		//}
-		//fmt.Println(string(jso))
 	} else {
 		return "", errors.New("not a struct")
 	}
@@ -83,9 +76,7 @@ func (h *Handler) Read(id, t string, ptr interface{}) error {
 		}
 
 		structFieldKind := structField.Kind()
-		//inputFieldName := typeField.Tag.Get("json")
 		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
-		//inputFieldName := typeField.Name
 		if structFieldKind == reflect.Struct {
 			err := h.Read(id, inputFieldName, structField.Addr().Interface())
 			if err != nil {
