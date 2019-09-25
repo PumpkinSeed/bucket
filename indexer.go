@@ -4,7 +4,7 @@ import (
 	"log"
 	"reflect"
 
-	"gopkg.in/couchbase/gocb.v1"
+	"github.com/couchbase/gocb"
 )
 
 const (
