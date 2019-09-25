@@ -26,92 +26,143 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 	}
 	documentID := typ + "::" + id
 
-	if reflect.ValueOf(q).Kind() == reflect.Struct {
-		v := reflect.ValueOf(q)
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Field(i)
-			if field.Kind() == reflect.Struct {
-				a := v.Type().Field(i)
-				b := field.Interface()
-				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
-				_, err := h.write(b, fieldName, id)
-				if err != nil {
-					return "", err
+	rvQ := reflect.ValueOf(q)
+	rtQ := rvQ.Type()
+
+	if rtQ.Kind() == reflect.Struct {
+		for i := 0; i < rvQ.NumField(); i++ {
+			rvQField := rvQ.Field(i)
+			rtQField := rtQ.Field(i)
+
+			if rvQField.Kind() == reflect.Ptr {
+				rvQField = reflect.Indirect(rvQField)
+			}
+			if rvQField.Kind() == reflect.Struct {
+				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+					if strings.Contains(tag, ",omitempty") {
+						tag = strings.Replace(tag, ",omitempty", "", -1)
+					}
+					if _, err := h.write(rvQField.Interface(), tag, id); err != nil {
+						return id, err
+					}
 				}
 			} else {
-				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
-				fields[k] = fmt.Sprintf("%v", field)
+				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+					fields[tag] = rvQField.Interface()
+				}
 			}
 		}
 	} else {
-		return "", errors.New("not a struct")
+		return id, errors.New("not a struct")
 	}
+
 	_, err := h.bucket.Insert(documentID, fields, 0)
-	return documentID, err
+	return id, err
 }
 
-func (h *Handler) Read(id, t string, ptr interface{}) error {
-	documentID := t + "::" + id
-	var doc interface{}
+func (h *Handler) Reed(document, id string, ptr interface{}) error {
+	documentID := document + "::" + id
 
-	_, err := h.bucket.Get(documentID, &doc)
+	_, err := h.bucket.Get(documentID, ptr)
 	if err != nil {
 		return err
 	}
 
-	typ := reflect.TypeOf(ptr).Elem()
-	val := reflect.ValueOf(ptr).Elem()
+	rvQ := reflect.ValueOf(ptr)
+	rtQ := rvQ.Type()
 
-	if typ.Kind() != reflect.Struct {
-		return errors.New("second argument must be a struct")
-	}
-
-	for i := 0; i < typ.NumField(); i++ {
-		typeField := typ.Field(i)
-		structField := val.Field(i)
-
-		if !structField.CanSet() {
-			fmt.Println("field ", i, "cannot be set")
-			continue
-		}
-
-		structFieldKind := structField.Kind()
-		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
-		if structFieldKind == reflect.Struct {
-			err := h.Read(id, inputFieldName, structField.Addr().Interface())
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		if inputFieldName == "" {
-			inputFieldName = typeField.Name
-
-			if structFieldKind == reflect.Struct {
-				err := h.Read(id, inputFieldName, structField.Addr().Interface())
-				if err != nil {
-					return err
+	if rtQ.Kind() == reflect.Ptr {
+		rvQ = reflect.Indirect(rvQ)
+		rtQ = rvQ.Type()
+		if rtQ.Kind() == reflect.Struct {
+			for i := 0; i < rvQ.NumField(); i++ {
+				rvQField := rvQ.Field(i)
+				rtQField := rtQ.Field(i)
+				if rvQField.Kind() == reflect.Ptr {
+					rvQField.Set(reflect.New(rvQField.Type().Elem()))
+					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+						if strings.Contains(tag, ",omitempty") {
+							tag = strings.Replace(tag, ",omitempty", "", -1)
+						}
+						if err = h.Reed(tag, id, rvQField.Interface()); err != nil {
+							return err
+						}
+					}
 				}
-				continue
+
 			}
 		}
-
-		var inputValue string
-		for _, key := range reflect.ValueOf(doc).MapKeys() {
-			val := reflect.Indirect(key).Interface()
-			if inputFieldName == val {
-				inputValue = fmt.Sprintf("%v", reflect.ValueOf(doc).MapIndex(key).Interface())
-			}
-		}
-
-		if err := setWithProperType(typeField.Type.Kind(), inputValue, structField); err != nil {
-			return err
-		}
-
+	} else {
+		// err should be pointer
 	}
+
 	return nil
 }
+
+//func (h *Handler) Read(id, t string, ptr interface{}) error {
+//	documentID := t + "::" + id
+//	var doc interface{}
+//
+//	_, err := h.bucket.Get(documentID, &doc)
+//	if err != nil {
+//		return err
+//	}
+//
+//	typ := reflect.TypeOf(ptr).Elem()
+//	val := reflect.ValueOf(ptr).Elem()
+//
+//	if typ.Kind() != reflect.Struct {
+//		return errors.New("second argument must be a struct")
+//	}
+//
+//	for i := 0; i < typ.NumField(); i++ {
+//		typeField := typ.Field(i)
+//		structField := val.Field(i)
+//
+//		if !structField.CanSet() {
+//			fmt.Println("field ", i, "cannot be set")
+//			continue
+//		}
+//
+//		structFieldKind := structField.Kind()
+//		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
+//		if structFieldKind == reflect.Struct {
+//			err := h.Read(id, inputFieldName, structField.Addr().Interface())
+//			if err != nil {
+//				return err
+//			}
+//			continue
+//		}
+//
+//		if inputFieldName == "" {
+//			inputFieldName = typeField.Name
+//
+//			if structFieldKind == reflect.Struct {
+//				err := h.Read(id, inputFieldName, structField.Addr().Interface())
+//				if err != nil {
+//					return err
+//				}
+//				continue
+//			}
+//		}
+//
+//		var inputValue string
+//		for _, key := range reflect.ValueOf(doc).MapKeys() {
+//			val := reflect.Indirect(key).Interface()
+//			if inputFieldName == val {
+//				fmt.Println(key)
+//				fmt.Println(val)
+//				inputValue = fmt.Sprintf("%v", reflect.ValueOf(doc).MapIndex(key).Interface())
+//			}
+//		}
+//
+//		if err := setWithProperType(typeField.Type.Kind(), inputValue, structField); err != nil {
+//			return err
+//		}
+//
+//	}
+//	return nil
+//}
 
 func (h *Handler) Remove(id, t string, ptr interface{}) error {
 	typs := []string{t}

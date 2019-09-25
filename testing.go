@@ -83,8 +83,8 @@ type webshop struct {
 	ShippingMethod               string  `json:"shipping_method"`
 	WillBePaidLater              bool    `json:"will_be_paid_later"`
 	PaymentTransactionId         string  `json:"payment_transaction_id"`
-	Product                      product `json:"product"`
-	Store                        store   `json:"store,omitempty"`
+	Product                      *product `json:"product"`
+	Store                        *store   `json:"store,omitempty"`
 }
 
 type product struct {
@@ -138,7 +138,7 @@ func generate() webshop {
 		ShippingFees:              0,
 		ShippingMethod:            "Free shipping",
 		PaymentTransactionId:      xid.New().String(),
-		Product: product{
+		Product: &product{
 			ID:          xid.New().String(),
 			UserID:      xid.New().String(),
 			StoreID:     xid.New().String(),
@@ -151,7 +151,7 @@ func generate() webshop {
 			OnSale:      123,
 			Status:      "active",
 		},
-		Store: store{
+		Store: &store{
 			ID:          xid.New().String(),
 			UserID:      xid.New().String(),
 			Name:        "productshop",

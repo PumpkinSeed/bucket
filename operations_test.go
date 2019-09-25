@@ -20,35 +20,15 @@ func testInsert() (webshop, string, error) {
 }
 
 func TestRead(t *testing.T) {
-	_, ID, err := testInsert()
+	_, id, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ws := webshop{
-		Product: product{
-			ID:          "",
-			UserID:      "",
-			StoreID:     "",
-			Name:        "",
-			Description: "",
-			Slug:        "",
-			Price:       0,
-			SalePrice:   0,
-			CurrencyID:  0,
-			OnSale:      0,
-			Status:      "",
-		},
-		Store: store{
-			ID:          "",
-			UserID:      "",
-			Name:        "",
-			Description: "",
-		},
-	}
-	splitedID := strings.Split(ID, "::")
-	if err := th.Read(splitedID[1], splitedID[0], &ws); err != nil {
-		t.Fail()
+	ws := webshop{}
+	//splitedID := strings.Split(ID, "::")
+	if err := th.Reed("webshop", id, &ws); err != nil {
+		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", ws)
 }
