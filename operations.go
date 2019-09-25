@@ -172,12 +172,35 @@ func (h *Handler) getDocumentTypes(ptr interface{}, id string, typs []string) er
 	return nil
 }
 
-func Upsert() error {
+func (h *Handler) Upsert(id, t string, ptr interface{}, ttl int) error {
+	fields := make(map[string]interface{})
+	documentID := t + "::" + id
 
-	return nil
+	if reflect.ValueOf(ptr).Kind() == reflect.Struct {
+		v := reflect.ValueOf(ptr)
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			if field.Kind() == reflect.Struct {
+				a := v.Type().Field(i)
+				b := field.Interface()
+				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
+				if err := h.Upsert(id, fieldName, b, ttl); err != nil {
+					return err
+				}
+			} else {
+				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
+				fields[k] = fmt.Sprintf("%v", field)
+			}
+		}
+	} else {
+		return errors.New("not a struct")
+	}
+
+	_, err := h.bucket.Upsert(documentID, fields, uint32(ttl))
+	return err
 }
 
-func (h *Handler) Touch(id, t string, ptr interface{},ttl int) error {
+func (h *Handler) Touch(id, t string, ptr interface{}, ttl int) error {
 	types := []string{t}
 	e := h.getDocumentTypes(ptr, id, types)
 	if e != nil {
