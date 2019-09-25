@@ -96,7 +96,7 @@ func readTest() error {
 		ID:     0,
 		UserID: 0,
 		Name: Name{
-			N: "123",
+			N: "",
 		},
 	}
 	err := read("1","123",a)
@@ -118,13 +118,11 @@ func read(id,t string, ptr interface{}) error {
 		ID string
 		UserID string
 		Name *Name
-		N string
 	}
 	doc = &b{
 		ID:     "12",
 		UserID: "23",
 		Name:   &Name{N: "Andor"},
-		N: "Andor",
 	}
 
 	typ := reflect.TypeOf(ptr).Elem()
@@ -168,7 +166,12 @@ func read(id,t string, ptr interface{}) error {
 		}
 		//ITT KOKANYOLTAM //TODO
 		// inputFieldName = "ID"
-		inputValue := fmt.Sprintf("%v",reflect.Indirect(reflect.ValueOf(doc)).FieldByName(inputFieldName).Interface())
+		//reflect.Indirect(reflect.ValueOf(doc).FieldByName())
+		input := reflect.Indirect(reflect.ValueOf(doc)).FieldByName(inputFieldName)
+		if !input.IsValid() {
+			continue
+		}
+		inputValue := fmt.Sprintf("%v",input.Interface())
 		fmt.Println(inputValue)
 		fmt.Printf("%T\n", inputValue)
 			if err := setWithProperType(typeField.Type.Kind(), inputValue, structField); err != nil {
@@ -177,7 +180,6 @@ func read(id,t string, ptr interface{}) error {
 
 	}
 	fmt.Println(ptr)
-	fmt.Println("fasz")
 	return nil
 }
 
