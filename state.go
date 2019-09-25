@@ -3,7 +3,7 @@ package odatas
 import (
 	"errors"
 
-	"gopkg.in/couchbase/gocb.v1"
+	"github.com/couchbase/gocb"
 )
 
 type state struct {

@@ -2,56 +2,68 @@ package odatas
 
 import (
 	"context"
-	
-	"gopkg.in/couchbase/gocb.v1"
+	"net"
+	"net/http"
+	"time"
+
+	"github.com/couchbase/gocb"
 )
 
 type Handler struct {
-	state *state
+	state state
+
+	address     string
+	httpAddress string
+
+	http *http.Client
 
 	bucket *gocb.Bucket
+
+	username string // temp field
+	password string // temp field
 }
 
 type Configuration struct {
-	Connection string `json:"connection"`
-
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	Bucket         string `json:"bucket"`
-	BucketUsername string `json:"bucket_username"`
-	BucketPassword string `json:"bucket_password"`
-	Separator      string `json:"separator"`
+	Username         string `json:"username"`
+	Password         string `json:"password"`
+	BucketName       string `json:"bucket_name"`
+	BucketPassword   string `json:"bucket_password"`
+	ConnectionString string `json:"connection_string"`
+	Separator        string `json:"separator"`
 }
 
 func New(c *Configuration) Handler {
-	cdb, err := gocb.Connect(c.Connection)
-	if err != nil {
-		panic(err)
+	client := &http.Client{
+		Transport: &http.Transport{
+			Dial: (&net.Dialer{
+				Timeout: 5 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout: 5 * time.Second,
+		},
+		Timeout: time.Second * 10,
 	}
 
-	err = cdb.Authenticate(gocb.PasswordAuthenticator{
+	cluster, _ := gocb.Connect(c.ConnectionString)
+	_ = cluster.Authenticate(gocb.PasswordAuthenticator{
 		Username: c.Username,
 		Password: c.Password,
 	})
-	if err != nil {
-		panic(err)
-	}
+	bucket, _ := cluster.OpenBucket(c.BucketName, c.BucketPassword)
 
-	b, err := cdb.OpenBucket(c.Bucket, c.BucketPassword)
-	if err != nil {
-		panic(err)
-	}
-
-	s := newState(b, c.Separator)
-	err = s.load()
-	if err != nil {
-		panic(err)
-	}
+	s := newState(bucket, c.Separator)
+	_ = s.load()
 
 	return Handler{
-		bucket: b,
-		state:  s,
+		http:        client,
+		httpAddress: "http://localhost:8091",
+		bucket:      bucket,
+		username:    c.Username,
+		password:    c.Password,
 	}
+}
+
+func (h *Handler) GetManager() *gocb.BucketManager {
+	return h.bucket.Manager(h.username, h.password)
 }
 
 func (h *Handler) Insert(ctx *context.Context, bucketName, key string, value interface{}) error {
@@ -84,4 +96,3 @@ func (h *Handler) Get(ctx *context.Context, bucketName, key string) (interface{}
 
 	return res, nil
 }
-
