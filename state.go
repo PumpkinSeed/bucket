@@ -14,7 +14,7 @@ type state struct {
 	DocumentTypes map[string]string `json:"document_types"`
 
 	bucket    *gocb.Bucket `json:"-"`
-	Separator string `json:"separator"`
+	Separator string       `json:"separator"`
 }
 
 func newState(c *Configuration) (*state, error) {

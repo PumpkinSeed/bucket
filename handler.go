@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"time"
@@ -55,7 +56,7 @@ func New(c *Configuration) (*Handler, error) {
 	}, nil
 }
 
-func (h *Handler) GetManager() *gocb.BucketManager {
+func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }
 
