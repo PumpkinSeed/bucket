@@ -76,7 +76,7 @@ func TestRangeQuery(t *testing.T) {
 func TestSimpleSearchMatch(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		order := generate()
-		_, err := th.bucket.Insert("order::"+order.Token, order, 0)
+		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -97,7 +97,7 @@ func TestSimpleSearchMatch(t *testing.T) {
 func TestSimpleSearchMatchWithFacet(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		order := generate()
-		_, err := th.bucket.Insert("order::"+order.Token, order, 0)
+		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -87,7 +87,7 @@ func BenchmarkWithoutIndex(b *testing.B) {
 
 func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := th.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
+	resp, err := th.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}
@@ -97,7 +97,7 @@ func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 
 func searchNotIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := th.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
+	resp, err := th.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}

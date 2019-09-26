@@ -56,14 +56,14 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 		return id, errors.New("not a struct")
 	}
 
-	_, err := h.bucket.Insert(documentID, fields, 0)
+	_, err := th.state.bucket.Insert(documentID, fields, 0)
 	return id, err
 }
 
 func (h *Handler) Reed(document, id string, ptr interface{}) error {
 	documentID := document + "::" + id
 
-	_, err := h.bucket.Get(documentID, ptr)
+	_, err := th.state.bucket.Get(documentID, ptr)
 	if err != nil {
 		return err
 	}
@@ -172,7 +172,7 @@ func (h *Handler) Remove(id, t string, ptr interface{}) error {
 	}
 
 	for _, typ := range typs {
-		_, err := h.bucket.Remove(typ+"::"+id, 0)
+		_, err := th.state.bucket.Remove(typ+"::"+id, 0)
 		if err != nil {
 			return err
 		}
