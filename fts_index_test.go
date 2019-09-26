@@ -5,7 +5,7 @@ import "testing"
 func TestCreateFullTextSearchIndex(t *testing.T) {
 	indexName := "order_fts_idx"
 
-	h := New(&Configuration{})
+	h, _ := New(&Configuration{})
 	if ok, _, _ := h.InspectFullTextSearchIndex(indexName); ok {
 		err := h.DeleteFullTextSearchIndex(indexName)
 		if err != nil {

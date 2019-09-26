@@ -6,37 +6,55 @@ import (
 	"github.com/couchbase/gocb"
 )
 
-type state struct {
-	documentTypes map[string]string
+const (
+	stateDocumentKey = "bucket_state"
+)
 
-	bucket    *gocb.Bucket
-	separator string
+type state struct {
+	DocumentTypes map[string]string `json:"document_types"`
+
+	bucket    *gocb.Bucket `json:"-"`
+	Separator string `json:"separator"`
 }
 
-func newState(bucket *gocb.Bucket, separator string) *state {
-	var s state
-	s.documentTypes = make(map[string]string)
-	s.bucket = bucket
-	s.separator = separator
+func newState(c *Configuration) (*state, error) {
+	cluster, err := gocb.Connect(c.ConnectionString)
+	if err != nil {
+		return nil, err
+	}
+	err = cluster.Authenticate(gocb.PasswordAuthenticator{
+		Username: c.Username,
+		Password: c.Password,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	return &s
+	bucket, err := cluster.OpenBucket(c.BucketName, c.BucketPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	var s = &state{}
+	s.DocumentTypes = make(map[string]string)
+	s.bucket = bucket
+	s.Separator = c.Separator
+
+	return s, nil
 }
 
 func (s *state) load() error {
-	_, err := s.bucket.Get("documentType", s.documentTypes)
-	if err != nil {
-		return err
-	}
-	return nil
+	_, err := s.bucket.Get(stateDocumentKey, s)
+	return err
 }
 
 func (s *state) newType(name, prefix string) error {
-	if _, ok := s.documentTypes[name]; ok {
+	if _, ok := s.DocumentTypes[name]; ok {
 		return errors.New("document type already exists")
 	}
 
-	s.documentTypes[name] = prefix + s.separator
-	_, err := s.bucket.Upsert("documentType", s.documentTypes, 0)
+	s.DocumentTypes[name] = prefix + s.Separator
+	err := s.updateState()
 	if err != nil {
 		return err
 	}
@@ -45,17 +63,17 @@ func (s *state) newType(name, prefix string) error {
 }
 
 func (s *state) getType(name string) (string, error) {
-	if v, ok := s.documentTypes[name]; ok {
+	if v, ok := s.DocumentTypes[name]; ok {
 		return v, nil
 	}
 	return "", errors.New("document type doesn't exist")
 }
 
 func (s *state) deleteType(name string) error {
-	if _, ok := s.documentTypes[name]; ok {
-		delete(s.documentTypes, name)
+	if _, ok := s.DocumentTypes[name]; ok {
+		delete(s.DocumentTypes, name)
 
-		_, err := s.bucket.Upsert("documentType", s.documentTypes, 0)
+		err := s.updateState()
 		if err != nil {
 			return err
 		}
@@ -64,4 +82,9 @@ func (s *state) deleteType(name string) error {
 	}
 
 	return errors.New("document type doesn't exist")
+}
+
+func (s *state) updateState() error {
+	_, err := s.bucket.Upsert(stateDocumentKey, s, 0)
+	return err
 }

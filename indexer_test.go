@@ -12,10 +12,10 @@ const (
 	bucketName = "company"
 )
 
-var h Handler
+var h *Handler
 
 func init() {
-	h = New(&Configuration{
+	h, _ = New(&Configuration{
 		Username:       "Administrator",
 		Password:       "password",
 		BucketName:     bucketName,
@@ -30,7 +30,7 @@ func init() {
 
 	for j := 0; j < 10000; j++ {
 		instance := newTestStruct1()
-		_, _ = h.bucket.Insert(instance.Token, instance, 0)
+		_, _ = h.state.bucket.Insert(instance.Token, instance, 0)
 	}
 	fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 }
@@ -114,7 +114,7 @@ func BenchmarkWithoutIndex(b *testing.B) {
 
 func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := h.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
+	resp, err := h.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}
@@ -124,7 +124,7 @@ func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 
 func searchNotIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := h.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
+	resp, err := h.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}
