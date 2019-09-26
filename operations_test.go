@@ -27,7 +27,7 @@ func TestRead(t *testing.T) {
 
 	ws := webshop{}
 	//splitedID := strings.Split(ID, "::")
-	if err := th.Reed("webshop", id, &ws); err != nil {
+	if err := th.Read("webshop", id, &ws); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", ws)

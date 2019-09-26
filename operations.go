@@ -59,7 +59,7 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 	return id, err
 }
 
-func (h *Handler) Reed(document, id string, ptr interface{}) error {
+func (h *Handler) Read(document, id string, ptr interface{}) error {
 	documentID := document + "::" + id
 
 	_, err := h.state.bucket.Get(documentID, ptr)
@@ -83,7 +83,7 @@ func (h *Handler) Reed(document, id string, ptr interface{}) error {
 						if strings.Contains(tag, ",omitempty") {
 							tag = strings.Replace(tag, ",omitempty", "", -1)
 						}
-						if err = h.Reed(tag, id, rvQField.Interface()); err != nil {
+						if err = h.Read(tag, id, rvQField.Interface()); err != nil {
 							return err
 						}
 					}
