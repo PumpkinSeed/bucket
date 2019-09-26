@@ -19,6 +19,12 @@ func (h *Handler) Write(q interface{}, typ string) (string, error) {
 }
 
 func (h *Handler) write(q interface{}, typ, id string) (string, error) {
+	if !h.state.inspect(typ) {
+		err := h.state.setType(typ, typ)
+		if err != nil {
+			return "", err
+		}
+	}
 	fields := make(map[string]interface{})
 	if id == "" {
 		id = xid.New().String()
@@ -88,7 +94,6 @@ func (h *Handler) Read(document, id string, ptr interface{}) error {
 						}
 					}
 				}
-
 			}
 		}
 	} else {

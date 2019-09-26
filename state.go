@@ -2,6 +2,9 @@ package odatas
 
 import (
 	"errors"
+	"fmt"
+	"strings"
+	"sync"
 
 	"github.com/couchbase/gocb"
 )
@@ -10,11 +13,16 @@ const (
 	stateDocumentKey = "bucket_state"
 )
 
+func (h *Handler) SetDocumentType(name, prefix string) {
+	h.state.DocumentTypes[name] = prefix
+}
+
 type state struct {
+	sync.RWMutex
 	DocumentTypes map[string]string `json:"document_types"`
 
-	bucket    *gocb.Bucket `json:"-"`
-	Separator string `json:"separator"`
+	bucket        *gocb.Bucket   `json:"-"`
+	configuration *Configuration `json:"-"`
 }
 
 func newState(c *Configuration) (*state, error) {
@@ -36,9 +44,13 @@ func newState(c *Configuration) (*state, error) {
 	}
 
 	var s = &state{}
-	s.DocumentTypes = make(map[string]string)
 	s.bucket = bucket
-	s.Separator = c.Separator
+	s.configuration = c
+	_ = s.load()
+
+	if s.DocumentTypes == nil {
+		s.DocumentTypes = make(map[string]string)
+	}
 
 	return s, nil
 }
@@ -48,12 +60,17 @@ func (s *state) load() error {
 	return err
 }
 
-func (s *state) newType(name, prefix string) error {
-	if _, ok := s.DocumentTypes[name]; ok {
-		return errors.New("document type already exists")
-	}
+func (s *state) inspect(name string) bool {
+	s.RLock()
+	defer s.RUnlock()
+	_, ok := s.DocumentTypes[name]
+	return ok
+}
 
-	s.DocumentTypes[name] = prefix + s.Separator
+func (s *state) setType(name, prefix string) error {
+	s.Lock()
+	defer s.Unlock()
+	s.DocumentTypes[name] = prefix + s.configuration.Separator
 	err := s.updateState()
 	if err != nil {
 		return err
@@ -63,6 +80,8 @@ func (s *state) newType(name, prefix string) error {
 }
 
 func (s *state) getType(name string) (string, error) {
+	s.RLock()
+	defer s.RUnlock()
 	if v, ok := s.DocumentTypes[name]; ok {
 		return v, nil
 	}
@@ -70,6 +89,8 @@ func (s *state) getType(name string) (string, error) {
 }
 
 func (s *state) deleteType(name string) error {
+	s.Lock()
+	defer s.Unlock()
 	if _, ok := s.DocumentTypes[name]; ok {
 		delete(s.DocumentTypes, name)
 
@@ -82,6 +103,37 @@ func (s *state) deleteType(name string) error {
 	}
 
 	return errors.New("document type doesn't exist")
+}
+
+func (s *state) validate() (bool, error) {
+	key := "doc_type"
+	queryStr := fmt.Sprintf(`SELECT SPLIT(META().id, "%s")[0] %s FROM %s GROUP BY SPLIT(META().id, "%s")[0];`, s.configuration.Separator, key, s.configuration.BucketName, s.configuration.Separator)
+	query := gocb.NewN1qlQuery(queryStr)
+	rows, err := s.bucket.ExecuteN1qlQuery(query, nil)
+	if err != nil {
+		return false, err
+	}
+	var row map[string]string
+	var docTypesInMemory = make(map[string]bool)
+	for _, availableDocTypes := range s.DocumentTypes {
+		docTypesInMemory[strings.Replace(availableDocTypes, s.configuration.Separator, "", -1)] = true
+	}
+	var missingDocTypes []string
+	for rows.Next(&row) {
+		if docType := row[key]; docType != stateDocumentKey {
+			if _, ok := docTypesInMemory[docType]; !ok {
+				missingDocTypes = append(missingDocTypes, docType)
+			}
+		}
+	}
+
+	if len(missingDocTypes) > 0 {
+		return false, fmt.Errorf("missing doc types: [%s]", strings.Join(missingDocTypes, ", "))
+	}
+	if err = rows.Close(); err != nil {
+		return true, err
+	}
+	return true, nil
 }
 
 func (s *state) updateState() error {
