@@ -1,12 +1,15 @@
 package odatas
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestCreateFullTextSearchIndex(t *testing.T) {
 	indexName := "order_fts_idx"
 
-	if ok, _, _ := th.InspectFullTextSearchIndex(indexName); ok {
-		err := th.DeleteFullTextSearchIndex(indexName)
+	if ok, _, _ := th.InspectFullTextSearchIndex(context.Background(), indexName); ok {
+		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -21,7 +24,7 @@ func TestCreateFullTextSearchIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = th.CreateFullTextSearchIndex(def)
+	err = th.CreateFullTextSearchIndex(context.Background(), def)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -10,15 +11,15 @@ import (
 	"reflect"
 )
 
-func (h *Handler) Write(q interface{}, typ string) (string, error) {
-	documentID, err := h.write(q, typ, "")
+func (h *Handler) Write(ctx context.Context, typ string, q interface{}) (string, error) {
+	id, err := h.write(ctx, typ, "", q)
 	if err != nil {
 		return "", err
 	}
-	return documentID, nil
+	return id, nil
 }
 
-func (h *Handler) write(q interface{}, typ, id string) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (string, error) {
 	fields := make(map[string]interface{})
 	if id == "" {
 		id = xid.New().String()
@@ -46,7 +47,7 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 					if strings.Contains(tag, ",omitempty") {
 						tag = strings.Replace(tag, ",omitempty", "", -1)
 					}
-					if _, err := h.write(rvQField.Interface(), tag, id); err != nil {
+					if _, err := h.write(ctx, tag, id, rvQField.Interface()); err != nil {
 						return id, err
 					}
 				}
@@ -62,8 +63,8 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 	return id, err
 }
 
-func (h *Handler) Read(document, id string, ptr interface{}) error {
-	documentID := document + "::" + id
+func (h *Handler) Read(ctx context.Context, typ, id string, ptr interface{}) error {
+	documentID := typ + "::" + id
 
 	_, err := h.state.bucket.Get(documentID, ptr)
 	if err != nil {
@@ -86,7 +87,7 @@ func (h *Handler) Read(document, id string, ptr interface{}) error {
 						if strings.Contains(tag, ",omitempty") {
 							tag = strings.Replace(tag, ",omitempty", "", -1)
 						}
-						if err = h.Read(tag, id, rvQField.Interface()); err != nil {
+						if err = h.Read(ctx, tag, id, rvQField.Interface()); err != nil {
 							return err
 						}
 					}
@@ -101,9 +102,9 @@ func (h *Handler) Read(document, id string, ptr interface{}) error {
 	return nil
 }
 
-func (h *Handler) Remove(id, t string, ptr interface{}) error {
-	typs := []string{t}
-	e := h.remove(ptr, id, typs)
+func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
+	typs := []string{typ}
+	e := h.remove(ctx, typs, ptr, id)
 	if e != nil {
 		return e
 	}
@@ -117,7 +118,7 @@ func (h *Handler) Remove(id, t string, ptr interface{}) error {
 	return nil
 }
 
-func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
+func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
 	if typ.Kind() != reflect.Struct {
@@ -135,7 +136,7 @@ func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
 		structFieldKind := structField.Kind()
 		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
 		if structFieldKind == reflect.Struct {
-			err := h.remove(structField.Addr().Interface(), id, typs)
+			err := h.remove(ctx, typs, structField.Addr().Interface(), id)
 			if err != nil {
 				return err
 			}
@@ -146,7 +147,7 @@ func (h *Handler) remove(ptr interface{}, id string, typs []string) error {
 			inputFieldName = typeField.Name
 
 			if structFieldKind == reflect.Struct {
-				err := h.remove(structField.Addr().Interface(), id, typs)
+				err := h.remove(ctx, typs, structField.Addr().Interface(), id)
 				if err != nil {
 					return err
 				}
