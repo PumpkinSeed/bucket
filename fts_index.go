@@ -2,6 +2,7 @@ package odatas
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -149,12 +150,12 @@ func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, err
 	return ftsDef, nil
 }
 
-func (h *Handler) CreateFullTextSearchIndex(def *IndexDefinition) error {
+func (h *Handler) CreateFullTextSearchIndex(ctx context.Context, def *IndexDefinition) error {
 	body, err := json.Marshal(def)
 	if err != nil {
 		return err
 	}
-	req, _ := http.NewRequest("PUT", h.fullTextSearchURL(def.Name), bytes.NewBuffer(body))
+	req, _ := http.NewRequest("PUT", h.fullTextSearchURL(ctx, def.Name), bytes.NewBuffer(body))
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := h.http.Do(req)
@@ -180,8 +181,8 @@ func (h *Handler) CreateFullTextSearchIndex(def *IndexDefinition) error {
 	return nil
 }
 
-func (h *Handler) DeleteFullTextSearchIndex(indexName string) error {
-	req, _ := http.NewRequest("DELETE", h.fullTextSearchURL(indexName), nil)
+func (h *Handler) DeleteFullTextSearchIndex(ctx context.Context, indexName string) error {
+	req, _ := http.NewRequest("DELETE", h.fullTextSearchURL(ctx, indexName), nil)
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
 
@@ -208,8 +209,8 @@ func (h *Handler) DeleteFullTextSearchIndex(indexName string) error {
 	return nil
 }
 
-func (h *Handler) InspectFullTextSearchIndex(indexName string) (bool, *IndexDefinition, error) {
-	req, _ := http.NewRequest("GET", h.fullTextSearchURL(""), nil)
+func (h *Handler) InspectFullTextSearchIndex(ctx context.Context, indexName string) (bool, *IndexDefinition, error) {
+	req, _ := http.NewRequest("GET", h.fullTextSearchURL(ctx, ""), nil)
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
 
@@ -234,7 +235,7 @@ func (h *Handler) InspectFullTextSearchIndex(indexName string) (bool, *IndexDefi
 	return false, nil, nil
 }
 
-func (h *Handler) fullTextSearchURL(indexName string) string {
+func (h *Handler) fullTextSearchURL(ctx context.Context, indexName string) string {
 	if indexName == "" {
 		return fmt.Sprintf("%s%s", h.httpAddress, ftsEndpoint)
 	}

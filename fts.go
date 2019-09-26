@@ -1,6 +1,11 @@
 package odatas
 
 import (
+<<<<<<< HEAD
+=======
+	"context"
+	"errors"
+>>>>>>> develop
 	"fmt"
 	"time"
 
@@ -67,7 +72,7 @@ type RangeQuery struct {
 	Offset int `json:"-"`
 }
 
-func (h *Handler) SimpleSearch(index string, q *SearchQuery) ([]gocb.SearchResultHit, error) {
+func (h *Handler) SimpleSearch(ctx context.Context, index string, q *SearchQuery) ([]gocb.SearchResultHit, error) {
 	if err := q.Setup(); err != nil {
 		return nil, err
 	}
@@ -77,11 +82,11 @@ func (h *Handler) SimpleSearch(index string, q *SearchQuery) ([]gocb.SearchResul
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	hits, _, err := h.doSearch(query)
+	hits, _, err := h.doSearch(ctx, query)
 	return hits, err
 }
 
-func (h *Handler) SimpleSearchWithFacets(index string, q *SearchQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+func (h *Handler) SimpleSearchWithFacets(ctx context.Context, index string, q *SearchQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
 	if err := q.Setup(); err != nil {
 		return nil, nil, err
 	}
@@ -91,12 +96,12 @@ func (h *Handler) SimpleSearchWithFacets(index string, q *SearchQuery, facets []
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	h.addFacets(query, facets)
+	h.addFacets(ctx, query, facets)
 
-	return h.doSearch(query)
+	return h.doSearch(ctx, query)
 }
 
-func (h *Handler) CompoundSearch(index string, q *CompoundQueries) ([]gocb.SearchResultHit, error) {
+func (h *Handler) CompoundSearch(ctx context.Context, index string, q *CompoundQueries) ([]gocb.SearchResultHit, error) {
 	if err := q.Setup(); err != nil {
 		return nil, err
 	}
@@ -106,11 +111,11 @@ func (h *Handler) CompoundSearch(index string, q *CompoundQueries) ([]gocb.Searc
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	result, _, err := h.doSearch(query)
+	result, _, err := h.doSearch(ctx, query)
 	return result, err
 }
 
-func (h *Handler) CompoundSearchWithFacets(index string, q *CompoundQueries, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+func (h *Handler) CompoundSearchWithFacets(ctx context.Context, index string, q *CompoundQueries, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
 	if err := q.Setup(); err != nil {
 		return nil, nil, err
 	}
@@ -120,12 +125,12 @@ func (h *Handler) CompoundSearchWithFacets(index string, q *CompoundQueries, fac
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	h.addFacets(query, facets)
-	result, facetResult, err := h.doSearch(query)
+	h.addFacets(ctx, query, facets)
+	result, facetResult, err := h.doSearch(ctx, query)
 	return result, facetResult, err
 }
 
-func (h *Handler) RangeSearch(index string, q *RangeQuery) ([]gocb.SearchResultHit, error) {
+func (h *Handler) RangeSearch(ctx context.Context, index string, q *RangeQuery) ([]gocb.SearchResultHit, error) {
 	if err := q.Setup(); err != nil {
 		return nil, err
 	}
@@ -135,11 +140,11 @@ func (h *Handler) RangeSearch(index string, q *RangeQuery) ([]gocb.SearchResultH
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	result, _, err := h.doSearch(query)
+	result, _, err := h.doSearch(ctx, query)
 	return result, err
 }
 
-func (h *Handler) RangeSearchWithFacets(index string, q *RangeQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+func (h *Handler) RangeSearchWithFacets(ctx context.Context, index string, q *RangeQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
 	if err := q.Setup(); err != nil {
 		return nil, nil, err
 	}
@@ -149,12 +154,12 @@ func (h *Handler) RangeSearchWithFacets(index string, q *RangeQuery, facets []Fa
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	h.addFacets(query, facets)
-	result, facetResult, err := h.doSearch(query)
+	h.addFacets(ctx, query, facets)
+	result, facetResult, err := h.doSearch(ctx, query)
 	return result, facetResult, err
 }
 
-func (h *Handler) doSearch(query *gocb.SearchQuery) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+func (h *Handler) doSearch(ctx context.Context, query *gocb.SearchQuery) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
 	res, err := h.state.bucket.ExecuteSearchQuery(query)
 	if err != nil {
 		return nil, nil, err
@@ -167,7 +172,7 @@ func (h *Handler) doSearch(query *gocb.SearchQuery) ([]gocb.SearchResultHit, map
 	return res.Hits(), res.Facets(), nil
 }
 
-func (h *Handler) addFacets(query *gocb.SearchQuery, facets []FacetDef) {
+func (h *Handler) addFacets(ctx context.Context, query *gocb.SearchQuery, facets []FacetDef) {
 	for _, facet := range facets {
 		switch facet.Type {
 		case FacetDate:
