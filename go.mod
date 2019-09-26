@@ -1,4 +1,4 @@
-module bitbucket.com/fluidpay/odatas
+module github.com/PumpkinSeed/odatas
 
 go 1.12
 
