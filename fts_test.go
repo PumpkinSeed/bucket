@@ -90,7 +90,7 @@ func TestSimpleSearchMatch(t *testing.T) {
 		}
 	}
 
-	handler := New(&Configuration{})
+	handler, _ := New(&Configuration{})
 	searchMatch := "Talia"
 	mes := time.Now()
 	_, err := handler.SimpleSearch("order_fts_idx", &SearchQuery{
@@ -114,7 +114,7 @@ func TestSimpleSearchMatchWithFacet(t *testing.T) {
 		}
 	}
 
-	handler := New(&Configuration{})
+	handler, _ := New(&Configuration{})
 	searchMatch := "Talia"
 	mes := time.Now()
 	_, _, err := handler.SimpleSearchWithFacets(
