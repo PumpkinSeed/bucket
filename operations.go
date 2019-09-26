@@ -38,21 +38,24 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 			rvQField := rvQ.Field(i)
 			rtQField := rtQ.Field(i)
 
-			if rvQField.Kind() == reflect.Ptr {
-				rvQField = reflect.Indirect(rvQField)
-			}
-			if rvQField.Kind() == reflect.Struct {
+			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() {
 				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-					if strings.Contains(tag, ",omitempty") {
-						tag = strings.Replace(tag, ",omitempty", "", -1)
-					}
-					if _, err := h.write(rvQField.Interface(), tag, id); err != nil {
-						return id, err
-					}
+					fields[removeOmitempty(tag)] = nil
 				}
 			} else {
-				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-					fields[tag] = rvQField.Interface()
+				if rvQField.Kind() == reflect.Ptr {
+					rvQField = reflect.Indirect(rvQField)
+				}
+				if rvQField.Kind() == reflect.Struct {
+					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+						if _, err := h.write(rvQField.Interface(), removeOmitempty(tag), id); err != nil {
+							return id, err
+						}
+					}
+				} else {
+					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+						fields[removeOmitempty(tag)] = rvQField.Interface()
+					}
 				}
 			}
 		}
@@ -60,6 +63,13 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 
 	_, err := h.state.bucket.Insert(documentID, fields, 0)
 	return id, err
+}
+
+func removeOmitempty(tag string) string {
+	if strings.Contains(tag, ",omitempty") {
+		tag = strings.Replace(tag, ",omitempty", "", -1)
+	}
+	return tag
 }
 
 func (h *Handler) Read(document, id string, ptr interface{}) error {

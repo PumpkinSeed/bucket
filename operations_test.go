@@ -2,6 +2,7 @@ package odatas
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,29 @@ func TestWritePtrValue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestWritePrimitivePtr(t *testing.T) {
+	asd := "asd"
+	s := struct {
+		Name *string `json:"name,omitempty"`
+	}{Name: &asd}
+	_, err := th.Write(s, "webshop")
+	if err != nil {
+		t.Error("Missing error")
+	}
+	log.Println(err)
+}
+
+func TestWritePrimitivePtrNil(t *testing.T) {
+	s := struct {
+		Name *string `json:"name,omitempty"`
+	}{}
+	_, err := th.Write(s, "webshop")
+	if err != nil {
+		t.Error("Missing error")
+	}
+	log.Println(err)
 }
 
 func testInsert() (webshop, string, error) {
