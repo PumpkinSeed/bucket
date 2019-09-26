@@ -15,8 +15,8 @@ func Test(t *testing.T) {
 
 func testInsert() (webshop, string, error) {
 	ws := generate()
-	ID, err := th.Write(ws, "webshop")
-	return ws, ID, err
+	id, err := th.Write( "webshop",ws)
+	return ws, id, err
 }
 
 func TestRead(t *testing.T) {
@@ -26,7 +26,6 @@ func TestRead(t *testing.T) {
 	}
 
 	ws := webshop{}
-	//splitedID := strings.Split(ID, "::")
 	if err := th.Read("webshop", id, &ws); err != nil {
 		t.Fatal(err)
 	}
@@ -41,17 +40,17 @@ func BenchmarkInsertEmb(b *testing.B) {
 
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = th.Write(generate(), "webshop")
+		_, _ = th.Write( "webshop",generate())
 	}
 }
 
 func BenchmarkGetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		ID, _ := th.Write(generate(), "webshop")
+		ID, _ := th.Write( "webshop",generate())
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
-		_ = th.Read(ID, "webshop", webshop{})
+		_ = th.Read("webshop", ID, webshop{})
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
@@ -59,11 +58,10 @@ func BenchmarkGetSingle(b *testing.B) {
 func BenchmarkGetEmbedded(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		_, ID, _ := testInsert()
+		_, id, _ := testInsert()
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
-		split := strings.Split(ID, "::")
 		start := time.Now()
-		_ = th.Read(split[1], split[0], &webshop{})
+		_ = th.Read("webshop", id, &webshop{})
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
