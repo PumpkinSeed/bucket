@@ -51,7 +51,7 @@ func New(c *Configuration) (*Handler, error) {
 		httpAddress: "http://localhost:8091",
 		username:    c.Username,
 		password:    c.Password,
-		state: s,
+		state:       s,
 	}, nil
 }
 
