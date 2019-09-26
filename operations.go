@@ -117,14 +117,12 @@ func (h *Handler) Read(id, t string, ptr interface{}) error {
 
 func (h *Handler) Remove(id, t string, ptr interface{}) error {
 	typs := []string{t}
-	e := h.getDocumentTypes(ptr, id, typs)
-	if e != nil {
-		return e
+	if err := h.getDocumentTypes(ptr, id, typs); err != nil {
+		return err
 	}
 
 	for _, typ := range typs {
-		_, err := h.bucket.Remove(typ+"::"+id, 0)
-		if err != nil {
+		if _, err := h.bucket.Remove(typ+"::"+id, 0); err != nil {
 			return err
 		}
 	}

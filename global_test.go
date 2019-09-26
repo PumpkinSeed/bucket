@@ -9,6 +9,8 @@ import (
 
 var h Handler
 
+const skipGlobalSeed = false
+
 func init() {
 	gofakeit.Seed(time.Now().UnixNano())
 
@@ -20,9 +22,11 @@ func init() {
 	}
 	fmt.Printf("Bucket flushed: %v\n", time.Since(start))
 
-	for j := 0; j < 10000; j++ {
-		instance := newTestStruct1()
-		_, _ = h.bucket.Insert(instance.Token, instance, 0)
+	if !skipGlobalSeed {
+		for j := 0; j < 10000; j++ {
+			instance := newTestStruct1()
+			_, _ = h.bucket.Insert(instance.Token, instance, 0)
+		}
+		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 	}
-	fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 }

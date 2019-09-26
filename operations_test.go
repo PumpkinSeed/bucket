@@ -181,6 +181,17 @@ func TestUpsert(t *testing.T) {
 
 }
 
+func TestRemove(t *testing.T) {
+	_, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	split := strings.Split(ID, "::")
+	if err := h.Remove(split[1], split[0], &webshop{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func BenchmarkInsertEmb(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _, _ = testInsert()
