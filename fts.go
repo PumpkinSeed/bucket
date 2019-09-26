@@ -161,7 +161,7 @@ func (h *Handler) RangeSearchWithFacets(index string, q *RangeQuery, facets []Fa
 }
 
 func (h *Handler) doSearch(query *gocb.SearchQuery) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
-	res, err := h.bucket.ExecuteSearchQuery(query)
+	res, err := h.state.bucket.ExecuteSearchQuery(query)
 	if err != nil {
 		return nil, nil, err
 	}

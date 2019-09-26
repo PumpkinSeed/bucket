@@ -9,13 +9,13 @@ import (
 )
 
 func TestIndexCreate(t *testing.T) {
-	instance := testStructEmbedded{}
+	instance := webshop{}
 
-	if err := h.Index(instance); err != nil {
+	if err := th.Index(instance); err != nil {
 		t.Fatal(err)
 	}
 
-	indexes, err := h.GetManager().GetIndexes()
+	indexes, err := th.GetManager().GetIndexes()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestIndexCreate(t *testing.T) {
 }
 
 func TestSearchWithIndex(t *testing.T) {
-	if err := h.Index(testStruct1{}); err != nil {
+	if err := th.Index(webshop{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,7 +42,7 @@ func TestSearchWithIndex(t *testing.T) {
 }
 
 func TestSearchWithoutIndex(t *testing.T) {
-	if err := h.Index(testStruct1{}); err != nil {
+	if err := th.Index(webshop{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -54,7 +54,7 @@ func TestSearchWithoutIndex(t *testing.T) {
 }
 
 func BenchmarkWithIndex(b *testing.B) {
-	if err := h.Index(testStruct1{}); err != nil {
+	if err := th.Index(webshop{}); err != nil {
 		b.Fatal(err)
 	}
 
@@ -70,7 +70,7 @@ func BenchmarkWithIndex(b *testing.B) {
 }
 
 func BenchmarkWithoutIndex(b *testing.B) {
-	if err := h.Index(testStruct1{}); err != nil {
+	if err := th.Index(webshop{}); err != nil {
 		b.Fatal(err)
 	}
 
@@ -87,7 +87,7 @@ func BenchmarkWithoutIndex(b *testing.B) {
 
 func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := h.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
+	resp, err := th.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}
@@ -97,7 +97,7 @@ func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 
 func searchNotIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
 	start := time.Now()
-	resp, err := h.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
+	resp, err := th.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
 	if err != nil {
 		return start, nil, err
 	}
