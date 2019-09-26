@@ -1,7 +1,6 @@
 package odatas
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -85,7 +84,7 @@ func (s *state) getType(name string) (string, error) {
 	if v, ok := s.DocumentTypes[name]; ok {
 		return v, nil
 	}
-	return "", errors.New("document type doesn't exist")
+	return "", ErrDocumentTypeDoesntExists
 }
 
 func (s *state) deleteType(name string) error {
@@ -102,7 +101,7 @@ func (s *state) deleteType(name string) error {
 		return nil
 	}
 
-	return errors.New("document type doesn't exist")
+	return ErrDocumentTypeDoesntExists
 }
 
 func (s *state) validate() (bool, error) {

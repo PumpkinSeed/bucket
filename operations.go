@@ -2,7 +2,6 @@ package odatas
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -127,7 +126,7 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
 	if typ.Kind() != reflect.Struct {
-		return errors.New("second argument must be a struct")
+		return ErrFirstParameterNotStruct
 	}
 	for i := 0; i < typ.NumField(); i++ {
 		typeField := typ.Field(i)
