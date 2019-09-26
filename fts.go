@@ -2,7 +2,6 @@ package odatas
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -14,11 +13,6 @@ const (
 	FacetDate = iota
 	FacetNumeric
 	FacetTerm
-)
-
-var (
-	ErrEmptyField = errors.New("field must be filled")
-	ErrEmptyIndex = errors.New("index must be filled")
 )
 
 type SearchQuery struct {
@@ -251,7 +245,7 @@ func (s *SearchQuery) Setup() error {
 
 func (c *CompoundQueries) Setup() error {
 	if c.Conjunction == nil && c.Disjunction == nil {
-		return errors.New("")
+		return ErrConjunctionAndDisjunktionIsNil
 	}
 
 	if c.Conjunction != nil {
@@ -281,7 +275,7 @@ func (d *RangeQuery) Setup() error {
 
 	if !d.StartAsTime.IsZero() {
 		if d.EndAsTime.IsZero() {
-			return errors.New("")
+			return ErrEndAsTimeZero
 		}
 		d.Start = d.StartAsTime.Format(time.RFC3339)
 		d.End = d.EndAsTime.Format(time.RFC3339)

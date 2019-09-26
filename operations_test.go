@@ -16,7 +16,7 @@ func TestWrite(t *testing.T) {
 
 func TestWritePtrValue(t *testing.T) {
 	ws := generate()
-	_, err := th.Write(&ws, "webshop")
+	_, err := th.Write(context.Background(), "webshop", &ws)
 	if err != nil {
 		t.Fatal(err)
 	}
