@@ -91,11 +91,10 @@ func (h *Handler) Read(document, id string, ptr interface{}) error {
 				rvQField := rvQ.Field(i)
 				rtQField := rtQ.Field(i)
 				if rvQField.Kind() == reflect.Ptr {
-					rvQField.Set(reflect.New(rvQField.Type().Elem()))
-					fmt.Println(reflect.Indirect(rvQField.Elem()))
-					if reflect.Indirect(rvQField).Kind() != reflect.Struct {
+					if rvQField.Type().Elem().Kind() != reflect.Struct {
 						continue
 					}
+					rvQField.Set(reflect.New(rvQField.Type().Elem()))
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 						if strings.Contains(tag, ",omitempty") {
 							tag = strings.Replace(tag, ",omitempty", "", -1)
