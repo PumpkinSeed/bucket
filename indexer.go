@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"log"
 	"reflect"
 
@@ -13,8 +14,8 @@ const (
 	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
-func (h *Handler) Index(v interface{}) error {
-	if err := h.GetManager().CreatePrimaryIndex("", true, false); err != nil {
+func (h *Handler) Index(ctx context.Context, v interface{}) error {
+	if err := h.GetManager(ctx).CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)
 	}
 
@@ -24,7 +25,7 @@ func (h *Handler) Index(v interface{}) error {
 	goDeep(t, indexables)
 
 	for key, val := range indexables {
-		if err := makeIndex(h.GetManager(), key, val); err != nil {
+		if err := makeIndex(h.GetManager(ctx), key, val); err != nil {
 			return err
 		}
 	}

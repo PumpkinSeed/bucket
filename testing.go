@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -33,7 +34,7 @@ func seed() {
 		gofakeit.Seed(time.Now().UnixNano())
 
 		start := time.Now()
-		if err := th.GetManager().Flush(); err != nil {
+		if err := th.GetManager(context.Background()).Flush(); err != nil {
 			fmt.Printf("Turn on flush in bucket: %+v\n", err)
 		}
 		fmt.Printf("Bucket flushed: %v\n", time.Since(start))

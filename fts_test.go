@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -84,7 +85,7 @@ func TestSimpleSearchMatch(t *testing.T) {
 
 	searchMatch := "Talia"
 	mes := time.Now()
-	_, err := th.SimpleSearch("order_fts_idx", &SearchQuery{
+	_, err := th.SimpleSearch(context.Background(), "order_fts_idx", &SearchQuery{
 		Query: searchMatch,
 		//Field: "CardHolderName",
 	})
@@ -106,6 +107,7 @@ func TestSimpleSearchMatchWithFacet(t *testing.T) {
 	searchMatch := "Talia"
 	mes := time.Now()
 	_, _, err := th.SimpleSearchWithFacets(
+		context.Background(),
 		"order_fts_idx",
 		&SearchQuery{
 			Query: searchMatch,
