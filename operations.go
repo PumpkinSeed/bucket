@@ -92,6 +92,10 @@ func (h *Handler) Read(document, id string, ptr interface{}) error {
 				rtQField := rtQ.Field(i)
 				if rvQField.Kind() == reflect.Ptr {
 					rvQField.Set(reflect.New(rvQField.Type().Elem()))
+					fmt.Println(reflect.Indirect(rvQField.Elem()))
+					if reflect.Indirect(rvQField).Kind() != reflect.Struct {
+						continue
+					}
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 						if strings.Contains(tag, ",omitempty") {
 							tag = strings.Replace(tag, ",omitempty", "", -1)
@@ -107,7 +111,6 @@ func (h *Handler) Read(document, id string, ptr interface{}) error {
 	} else {
 		// err should be pointer
 	}
-
 	return nil
 }
 

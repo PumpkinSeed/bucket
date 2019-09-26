@@ -65,6 +65,24 @@ func TestRead(t *testing.T) {
 	fmt.Printf("%+v\n", ws)
 }
 
+func TestReadPrimitivePtr(t *testing.T) {
+	a := "a"
+	type wtyp struct {
+		Job *string `json:"name,omitempty"`
+	}
+	w := wtyp{Job: &a}
+	id, errInsert := th.Write(w, "webshop")
+	if errInsert != nil {
+		t.Error("Error")
+	}
+	var ww = wtyp{}
+	errGet := th.Read("webshop", id, &ww)
+	if errGet != nil {
+		t.Error("Error")
+	}
+	fmt.Println(*ww.Job)
+}
+
 func BenchmarkInsertEmb(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _, _ = testInsert()
