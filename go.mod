@@ -1,4 +1,4 @@
-module github.com/PumpkinSeed/odatas
+module github.com/PumpkinSeed/bucket
 
 go 1.12
 
