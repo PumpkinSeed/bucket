@@ -1,8 +1,6 @@
 package odatas
 
 import (
-	"errors"
-
 	"github.com/couchbase/gocb"
 )
 
@@ -14,7 +12,7 @@ type state struct {
 	DocumentTypes map[string]string `json:"document_types"`
 
 	bucket    *gocb.Bucket `json:"-"`
-	Separator string `json:"separator"`
+	Separator string       `json:"separator"`
 }
 
 func newState(c *Configuration) (*state, error) {
@@ -50,7 +48,7 @@ func (s *state) load() error {
 
 func (s *state) newType(name, prefix string) error {
 	if _, ok := s.DocumentTypes[name]; ok {
-		return errors.New("document type already exists")
+		return ErrDocumentTypeAlredyExists
 	}
 
 	s.DocumentTypes[name] = prefix + s.Separator
@@ -66,7 +64,7 @@ func (s *state) getType(name string) (string, error) {
 	if v, ok := s.DocumentTypes[name]; ok {
 		return v, nil
 	}
-	return "", errors.New("document type doesn't exist")
+	return "", ErrDocumentTypeDoesntExists
 }
 
 func (s *state) deleteType(name string) error {
@@ -81,7 +79,7 @@ func (s *state) deleteType(name string) error {
 		return nil
 	}
 
-	return errors.New("document type doesn't exist")
+	return ErrDocumentTypeDoesntExists
 }
 
 func (s *state) updateState() error {

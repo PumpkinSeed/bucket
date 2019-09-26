@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"testing"
@@ -12,11 +13,11 @@ import (
 func TestIndexCreate(t *testing.T) {
 	instance := webshop{}
 
-	if err := th.Index(instance); err != nil {
+	if err := th.Index(context.Background(), instance); err != nil {
 		t.Fatal(err)
 	}
 
-	indexes, err := th.GetManager().GetIndexes()
+	indexes, err := th.GetManager(context.Background()).GetIndexes()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +32,7 @@ func TestIndexCreate(t *testing.T) {
 }
 
 func TestSearchWithIndex(t *testing.T) {
-	if err := th.Index(webshop{}); err != nil {
+	if err := th.Index(context.Background(), webshop{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,7 +45,7 @@ func TestSearchWithIndex(t *testing.T) {
 }
 
 func TestSearchWithoutIndex(t *testing.T) {
-	if err := th.Index(webshop{}); err != nil {
+	if err := th.Index(context.Background(), webshop{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -57,7 +58,7 @@ func TestSearchWithoutIndex(t *testing.T) {
 }
 
 func BenchmarkWithIndex(b *testing.B) {
-	if err := th.Index(webshop{}); err != nil {
+	if err := th.Index(context.Background(), webshop{}); err != nil {
 		b.Fatal(err)
 	}
 
@@ -73,7 +74,7 @@ func BenchmarkWithIndex(b *testing.B) {
 }
 
 func BenchmarkWithoutIndex(b *testing.B) {
-	if err := th.Index(webshop{}); err != nil {
+	if err := th.Index(context.Background(), webshop{}); err != nil {
 		b.Fatal(err)
 	}
 
