@@ -1,6 +1,7 @@
 package odatas
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -12,8 +13,8 @@ const (
 	stateDocumentKey = "bucket_state"
 )
 
-func (h *Handler) SetDocumentType(name, prefix string) {
-	h.state.DocumentTypes[name] = prefix
+func (h *Handler) SetDocumentType(ctx context.Context, name, prefix string) error {
+	return h.state.setType(name, prefix)
 }
 
 type state struct {
