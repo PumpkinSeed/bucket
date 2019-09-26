@@ -1,11 +1,7 @@
 package odatas
 
 import (
-<<<<<<< HEAD
-=======
 	"context"
-	"errors"
->>>>>>> develop
 	"fmt"
 	"strings"
 
