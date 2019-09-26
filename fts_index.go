@@ -83,13 +83,13 @@ type IndexMeta struct {
 
 func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, error) {
 	if meta.Name == "" {
-		return nil, errors.New("index name must set")
+		return nil, ErrEmptyIndex
 	}
 	if meta.SourceType == "" {
-		return nil, errors.New("source type must set")
+		return nil, ErrEmptyType
 	}
 	if meta.SourceName == "" {
-		return nil, errors.New("source name must set")
+		return nil, ErrEmptySource
 	}
 
 	var ftsDef = &IndexDefinition{
