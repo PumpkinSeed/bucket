@@ -7,8 +7,16 @@ import (
 	"time"
 )
 
-func Test(t *testing.T) {
+func TestWrite(t *testing.T) {
 	if _, _, err := testInsert(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWritePtrValue(t *testing.T) {
+	ws := generate()
+	_, err := th.Write(&ws, "webshop")
+	if err != nil {
 		t.Fatal(err)
 	}
 }

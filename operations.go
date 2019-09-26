@@ -28,6 +28,11 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
 
+	if rtQ.Kind() == reflect.Ptr {
+		rvQ = reflect.Indirect(rvQ)
+		rtQ = rvQ.Type()
+	}
+
 	if rtQ.Kind() == reflect.Struct {
 		for i := 0; i < rvQ.NumField(); i++ {
 			rvQField := rvQ.Field(i)
@@ -51,8 +56,6 @@ func (h *Handler) write(q interface{}, typ, id string) (string, error) {
 				}
 			}
 		}
-	} else {
-		return id, errors.New("not a struct")
 	}
 
 	_, err := h.state.bucket.Insert(documentID, fields, 0)
