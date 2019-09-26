@@ -10,22 +10,22 @@ import (
 	"reflect"
 )
 
-func (h *Handler) Write(typ string,d interface{}) (string, error) {
-	id, err := h.write(typ,"", d)
+func (h *Handler) Write(typ string,q interface{}) (string, error) {
+	id, err := h.write(typ,"", q)
 	if err != nil {
 		return "", err
 	}
 	return id, nil
 }
 
-func (h *Handler) write(typ, id string,d interface{} ) (string, error) {
+func (h *Handler) write(typ, id string,q interface{} ) (string, error) {
 	fields := make(map[string]interface{})
 	if id == "" {
 		id = xid.New().String()
 	}
 	documentID := typ + "::" + id
 
-	rvQ := reflect.ValueOf(d)
+	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
 
 	if rtQ.Kind() == reflect.Struct {
