@@ -1,6 +1,6 @@
-module github.com/PumpkinSeed/odatas
+module github.com/PumpkinSeed/bucket
 
-go 1.13
+go 1.12
 
 require (
 	github.com/brianvoe/gofakeit v3.18.0+incompatible

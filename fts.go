@@ -18,9 +18,6 @@ const (
 var (
 	ErrEmptyField = errors.New("field must be filled")
 	ErrEmptyIndex = errors.New("index must be filled")
-
-	placeholderBucket  *gocb.Bucket
-	placeholderCluster *gocb.Cluster
 )
 
 type SearchQuery struct {
@@ -76,32 +73,7 @@ type RangeQuery struct {
 	Offset int `json:"-"`
 }
 
-func placeholderInit() {
-	if placeholderBucket == nil {
-		var err error
-		placeholderCluster, err = gocb.Connect("couchbase://localhost")
-		if err != nil {
-			panic(err)
-		}
-
-		err = placeholderCluster.Authenticate(gocb.PasswordAuthenticator{
-			Username: "Administrator",
-			Password: "password",
-		})
-		if err != nil {
-			panic(err)
-		}
-
-		placeholderBucket, err = placeholderCluster.OpenBucket("company", "")
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
 func (h *Handler) SimpleSearch(index string, q *SearchQuery) ([]gocb.SearchResultHit, error) {
-	placeholderInit()
-
 	if err := q.Setup(); err != nil {
 		return nil, err
 	}
@@ -116,8 +88,6 @@ func (h *Handler) SimpleSearch(index string, q *SearchQuery) ([]gocb.SearchResul
 }
 
 func (h *Handler) SimpleSearchWithFacets(index string, q *SearchQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
-	placeholderInit()
-
 	if err := q.Setup(); err != nil {
 		return nil, nil, err
 	}
@@ -191,7 +161,7 @@ func (h *Handler) RangeSearchWithFacets(index string, q *RangeQuery, facets []Fa
 }
 
 func (h *Handler) doSearch(query *gocb.SearchQuery) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
-	res, err := placeholderBucket.ExecuteSearchQuery(query)
+	res, err := h.state.bucket.ExecuteSearchQuery(query)
 	if err != nil {
 		return nil, nil, err
 	}

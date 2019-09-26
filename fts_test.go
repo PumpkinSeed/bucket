@@ -5,13 +5,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/brianvoe/gofakeit"
 )
-
-func init() {
-	gofakeit.Seed(time.Now().UnixNano())
-}
 
 func TestSearchQuery(t *testing.T) {
 	sq := SearchQuery{
@@ -80,20 +74,17 @@ func TestRangeQuery(t *testing.T) {
 }
 
 func TestSimpleSearchMatch(t *testing.T) {
-	placeholderInit()
-
 	for i := 0; i < 10; i++ {
-		order := newTestStruct1()
-		_, err := placeholderBucket.Insert("order::"+order.Token, order, 0)
+		order := generate()
+		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	handler := New(&Configuration{})
 	searchMatch := "Talia"
 	mes := time.Now()
-	_, err := handler.SimpleSearch("order_fts_idx", &SearchQuery{
+	_, err := th.SimpleSearch("order_fts_idx", &SearchQuery{
 		Query: searchMatch,
 		//Field: "CardHolderName",
 	})
@@ -104,20 +95,17 @@ func TestSimpleSearchMatch(t *testing.T) {
 }
 
 func TestSimpleSearchMatchWithFacet(t *testing.T) {
-	placeholderInit()
-
 	for i := 0; i < 10; i++ {
-		order := newTestStruct1()
-		_, err := placeholderBucket.Insert("order::"+order.Token, order, 0)
+		order := generate()
+		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	handler := New(&Configuration{})
 	searchMatch := "Talia"
 	mes := time.Now()
-	_, _, err := handler.SimpleSearchWithFacets(
+	_, _, err := th.SimpleSearchWithFacets(
 		"order_fts_idx",
 		&SearchQuery{
 			Query: searchMatch,
