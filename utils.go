@@ -32,6 +32,13 @@ func defaultHandler() *Handler {
 	return h
 }
 
+func removeOmitempty(tag string) string {
+	if strings.Contains(tag, ",omitempty") {
+		tag = strings.Replace(tag, ",omitempty", "", -1)
+	}
+	return tag
+}
+
 func getDocumentTypes(ptr interface{}, typs []string, id string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()

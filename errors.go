@@ -16,4 +16,5 @@ var (
 	ErrEndAsTimeZero = errors.New("endAsTime is zero instant")
 
 	ErrFirstParameterNotStruct = errors.New("first parameter is not a struct")
+	ErrInputStructPointer      = errors.New("input struct must be pointer")
 )
