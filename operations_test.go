@@ -65,6 +65,24 @@ func TestRead(t *testing.T) {
 	fmt.Printf("%+v\n", ws)
 }
 
+func TestReadPrimitivePtrNil(t *testing.T) {
+	a := "a"
+	type wtyp struct {
+		Job *string `json:"name,omitempty"`
+	}
+	w := wtyp{Job: &a}
+	id, errInsert := th.Write(context.Background(), "webshop", w)
+	if errInsert != nil {
+		t.Error("Error")
+	}
+	var ww = wtyp{Job: nil}
+	errGet := th.Read(context.Background(), "webshop", id, &ww)
+	if errGet != nil {
+		t.Error("Error")
+	}
+	fmt.Println(*ww.Job)
+}
+
 func TestReadPrimitivePtr(t *testing.T) {
 	a := "a"
 	type wtyp struct {
@@ -75,7 +93,8 @@ func TestReadPrimitivePtr(t *testing.T) {
 	if errInsert != nil {
 		t.Error("Error")
 	}
-	var ww = wtyp{}
+	b := "b"
+	var ww = wtyp{Job: &b}
 	errGet := th.Read(context.Background(), "webshop", id, &ww)
 	if errGet != nil {
 		t.Error("Error")
