@@ -107,7 +107,7 @@ func (h *Handler) Read(ctx context.Context, typ, id string, ptr interface{}) err
 			}
 		}
 	} else {
-		// err should be pointer
+		return ErrInputStructPointer
 	}
 	return nil
 }
