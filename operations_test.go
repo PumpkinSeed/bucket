@@ -46,6 +46,31 @@ func TestWritePrimitivePtrNil(t *testing.T) {
 	log.Println(err)
 }
 
+func TestWriteNotExportedField(t *testing.T) {
+	s := struct {
+		name string
+	}{name: "Jackson"}
+	_, err := th.Write(context.Background(), "member", s)
+	if err != nil {
+		t.Error("Missing error")
+	}
+	log.Println(err)
+}
+
+func TestWriteExpectError(t *testing.T) {
+	s := struct {
+		name string
+	}{name: "Jackson"}
+	id, err := th.Write(context.Background(), "member", s)
+	if err != nil {
+		t.Error("Missing error")
+	}
+	_, errDuplicateInsert := th.write(context.Background(), "member", id, s)
+	if errDuplicateInsert == nil {
+		t.Error("error missing", errDuplicateInsert)
+	}
+}
+
 func testInsert() (webshop, string, error) {
 	ws := generate()
 	id, err := th.Write(context.Background(), "webshop", ws)
@@ -114,9 +139,27 @@ func TestReadNonPointerInput(t *testing.T) {
 	}
 	var ww = wtyp{}
 	errGet := th.Read(context.Background(), "webshop", id, ww)
-	if errGet == nil {
-		t.Error("missing error")
+	if errGet != nil {
+		t.Error("error")
 	}
+}
+
+func TestReadNotExportedField(t *testing.T) {
+	a := "helder"
+	type wtyp struct {
+		job string
+	}
+	w := wtyp{job: a}
+	id, errInsert := th.Write(context.Background(), "webshop", w)
+	if errInsert != nil {
+		t.Error("Error")
+	}
+	var ww = wtyp{}
+	errGet := th.Read(context.Background(), "webshop", id, &ww)
+	if errGet != nil {
+		t.Error("error")
+	}
+	fmt.Println(ww)
 }
 
 func BenchmarkInsertEmb(b *testing.B) {
@@ -149,6 +192,23 @@ func BenchmarkGetEmbedded(b *testing.B) {
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
 		_ = th.Read(context.Background(), "webshop", id, &webshop{})
+		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
+	}
+}
+
+func BenchmarkGetPtr(b *testing.B) {
+	type jobtyp struct {
+		Job *string `json:"job,omitempty"`
+	}
+	j := "helder"
+	for i := 0; i < b.N; i++ {
+		job := jobtyp{Job: &j}
+		startInsert := time.Now()
+		id, _ := th.Write(context.Background(), "job", job)
+		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
+		var jobRead jobtyp
+		start := time.Now()
+		_ = th.Read(context.Background(), "job", id, &jobRead)
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
