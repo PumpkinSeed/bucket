@@ -3,6 +3,7 @@ package odatas
 import (
 	"context"
 	"fmt"
+	"github.com/couchbase/gocb"
 	"strings"
 	"testing"
 	"time"
@@ -39,6 +40,25 @@ func TestRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", ws)
+}
+
+func TestPingNilService(t *testing.T) {
+	pingReport, err := th.Ping(context.Background(), nil)
+	if err != nil {
+		t.Error("error", err)
+	}
+	fmt.Printf("%+v\n", *pingReport)
+}
+
+func TestPingAllService(t *testing.T) {
+	services := make([]gocb.ServiceType, 5)
+	services = append(services, gocb.MemdService)
+
+	pingReport, err := th.Ping(context.Background(), []gocb.ServiceType{gocb.MemdService, gocb.MgmtService, gocb.CapiService, gocb.N1qlService, gocb.FtsService, gocb.CbasService})
+	if err != nil {
+		t.Error("error", err)
+	}
+	fmt.Printf("%+v\n", pingReport)
 }
 
 //func TestTouch(t *testing.T) {

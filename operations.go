@@ -213,8 +213,8 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 //	return nil
 //}
 
-func (h *Handler) Ping() (*gocb.PingReport, error) {
-	report, err := h.state.bucket.Ping(nil)
+func (h *Handler) Ping(ctx context.Context, services []gocb.ServiceType) (*gocb.PingReport, error) {
+	report, err := h.state.bucket.Ping(services)
 	if err != nil {
 		return nil, err
 	}
