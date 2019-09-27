@@ -40,7 +40,7 @@ func goDeep(t reflect.Type, indexables map[string][]string) {
 			goDeep(f.Type, indexables)
 		}
 		if f.Tag != "" {
-			if json := f.Tag.Get(tagJson); json != "" && json != "-" {
+			if json := removeOmitempty(f.Tag.Get(tagJson)); json != "" && json != "-" {
 				if f.Tag.Get(tagIndexable) != "" {
 					indexables[t.Name()] = append(indexables[t.Name()], json)
 				}

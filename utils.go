@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func basicAuth(username, password string) string {
@@ -26,4 +27,11 @@ func defaultHandler() *Handler {
 		log.Fatal(err)
 	}
 	return h
+}
+
+func removeOmitempty(tag string) string {
+	if strings.Contains(tag, ",omitempty") {
+		tag = strings.Replace(tag, ",omitempty", "", -1)
+	}
+	return tag
 }
