@@ -40,8 +40,7 @@ func TestSearchWithIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("One search time: %v\n%+v", start, err)
 	}
-	fmt.Printf("One search time: %v\nFound: %+v", time.Since(start), resp.Metrics())
-	log.Println("")
+	fmt.Printf("One search time: %v\nFound: %+v\n", time.Since(start), resp.Metrics())
 }
 
 func TestSearchWithoutIndex(t *testing.T) {
