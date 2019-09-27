@@ -215,29 +215,28 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, ptr interface{}, t
 	return err
 }
 
-//
-//func (h *Handler) Touch(id, t string, ptr interface{}, ttl int) error {
-//	types := []string{t}
-//	e := h.getDocumentTypes(ptr, id, types)
-//	if e != nil {
-//		return e
-//	}
-//
-//	for _, typ := range types {
-//		_, err := h.state.bucket.Touch(typ+"::"+id, 0, uint32(ttl))
-//		if err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
-//
-//func GetAndTouch() error {
-//	return nil
-//}
+func (h *Handler) Touch(typ, id string, ptr interface{}, ttl int) error {
+	types := []string{typ}
+	e := getDocumentTypes(ptr, types, id)
+	if e != nil {
+		return e
+	}
 
-func (h *Handler) Ping() (*gocb.PingReport, error) {
-	report, err := h.state.bucket.Ping(nil)
+	for _, typ := range types {
+		_, err := h.state.bucket.Touch(typ+"::"+id, 0, uint32(ttl))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetAndTouch() error {
+	return nil
+}
+
+func (h *Handler) Ping(ctx context.Context, services []gocb.ServiceType) (*gocb.PingReport, error) {
+	report, err := h.state.bucket.Ping(services)
 	if err != nil {
 		return nil, err
 	}
