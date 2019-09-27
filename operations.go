@@ -165,33 +165,56 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 	return nil
 }
 
-//func (h *Handler) Upsert(id, t string, ptr interface{}, ttl int) error {
-//	fields := make(map[string]interface{})
-//	documentID := t + "::" + id
-//
-//	if reflect.ValueOf(ptr).Kind() == reflect.Struct {
-//		v := reflect.ValueOf(ptr)
-//		for i := 0; i < v.NumField(); i++ {
-//			field := v.Field(i)
-//			if field.Kind() == reflect.Struct {
-//				a := v.Type().Field(i)
-//				b := field.Interface()
-//				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
-//				if err := h.Upsert(id, fieldName, b, ttl); err != nil {
-//					return err
-//				}
-//			} else {
-//				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
-//				fields[k] = fmt.Sprintf("%v", field)
-//			}
-//		}
-//	} else {
-//		return errors.New("not a struct")
-//	}
-//
-//	_, err := h.state.bucket.Upsert(documentID, fields, uint32(ttl))
-//	return err
-//}
+func (h *Handler) Upsert(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
+	if !h.state.inspect(typ) {
+		err := h.state.setType(typ, typ)
+		if err != nil {
+			return err
+		}
+	}
+	fields := make(map[string]interface{})
+	if id == "" {
+		id = xid.New().String()
+	}
+	documentID := typ + "::" + id
+
+	rvQ := reflect.ValueOf(ptr)
+	rtQ := rvQ.Type()
+
+	if rtQ.Kind() == reflect.Ptr {
+		rvQ = reflect.Indirect(rvQ)
+		rtQ = rvQ.Type()
+	}
+
+	if rtQ.Kind() == reflect.Struct {
+		for i := 0; i < rvQ.NumField(); i++ {
+			rvQField := rvQ.Field(i)
+			rtQField := rtQ.Field(i)
+
+			if rvQField.Kind() == reflect.Ptr {
+				rvQField = reflect.Indirect(rvQField)
+			}
+			if rvQField.Kind() == reflect.Struct {
+				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+					if strings.Contains(tag, ",omitempty") {
+						tag = strings.Replace(tag, ",omitempty", "", -1)
+					}
+					if err := h.Upsert(ctx, tag, id, rvQField.Interface(), ttl); err != nil {
+						return err
+					}
+				}
+			} else {
+				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+					fields[tag] = rvQField.Interface()
+				}
+			}
+		}
+	}
+
+	_, err := h.state.bucket.Upsert(documentID, fields, ttl)
+	return err
+}
+
 //
 //func (h *Handler) Touch(id, t string, ptr interface{}, ttl int) error {
 //	types := []string{t}
