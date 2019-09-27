@@ -15,7 +15,7 @@ func TestUpdateState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = s.newType("cache", "cache")
+	err = s.setType("cache", "cache")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,5 +28,24 @@ func TestUpdateState(t *testing.T) {
 
 	if s2.DocumentTypes["cache"] != "cache::" {
 		t.Errorf("Document key should be 'cache::', instead of %s", s2.DocumentTypes["cache"])
+	}
+}
+
+func TestValidate(t *testing.T) {
+	s, err := newState(&Configuration{
+		Username:         "Administrator",
+		Password:         "password",
+		BucketName:       "company",
+		BucketPassword:   "",
+		ConnectionString: "couchbase://localhost",
+		Separator:        "::",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.validate()
+	if err != nil {
+		t.Fatal(err)
 	}
 }
