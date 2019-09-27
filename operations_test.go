@@ -61,40 +61,38 @@ func TestPingAllService(t *testing.T) {
 	fmt.Printf("%+v\n", pingReport)
 }
 
-//func TestTouch(t *testing.T) {
-//	_, ID, err := testInsert()
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	ws := webshop{
-//		Email: "",
-//		Product: &product{
-//			ID:          "",
-//			UserID:      "",
-//			StoreID:     "",
-//			Name:        "",
-//			Description: "",
-//			Slug:        "",
-//			Price:       0,
-//			SalePrice:   0,
-//			CurrencyID:  0,
-//			OnSale:      0,
-//			Status:      "",
-//		},
-//		Store: &store{
-//			ID:          "",
-//			UserID:      "",
-//			Name:        "",
-//			Description: "",
-//		},
-//	}
-//	splitedID := strings.Split(ID, "::")
-//	if err := th.Touch(splitedID[1], splitedID[0], &ws, 10); err != nil {
-//		t.Fail()
-//	}
-//	fmt.Printf("%+v\n", ws)
-//}
+func TestTouch(t *testing.T) {
+	_, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ws := webshop{
+		Email: "",
+		Product: &product{
+			ID:          "",
+			UserID:      "",
+			StoreID:     "",
+			Name:        "",
+			Description: "",
+			Slug:        "",
+			Price:       0,
+			SalePrice:   0,
+			CurrencyID:  0,
+			OnSale:      0,
+			Status:      "",
+		},
+		Store: &store{
+			ID:          "",
+			UserID:      "",
+			Name:        "",
+			Description: "",
+		},
+	}
+	if err := th.Touch("webshop", ID, &ws, 10); err != nil {
+		t.Error("error", err)
+	}
+}
 
 //func TestUpsert(t *testing.T) {
 //	ws, ID, err := testInsert()
