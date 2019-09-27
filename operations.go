@@ -19,6 +19,12 @@ func (h *Handler) Write(ctx context.Context, typ string, q interface{}) (string,
 }
 
 func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (string, error) {
+	if !h.state.inspect(typ) {
+		err := h.state.setType(typ, typ)
+		if err != nil {
+			return "", err
+		}
+	}
 	fields := make(map[string]interface{})
 	if id == "" {
 		id = xid.New().String()
@@ -91,7 +97,6 @@ func (h *Handler) Read(ctx context.Context, typ, id string, ptr interface{}) err
 						}
 					}
 				}
-
 			}
 		}
 	} else {
