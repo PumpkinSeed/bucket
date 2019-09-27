@@ -13,14 +13,17 @@ import (
 )
 
 func (h *Handler) Insert(ctx context.Context, typ string, q interface{}) (string, error) {
-	id, err := h.write(ctx, typ, "", q)
+	id, err := h.write(ctx, typ, xid.New().String(), q, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
+		documentID := typ + "::" + id
+		return h.state.bucket.Insert(documentID, ptr, 0)
+	})
 	if err != nil {
 		return "", err
 	}
 	return id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f func(string, string, interface{}, int) (gocb.Cas, error)) (string, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
@@ -28,10 +31,6 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (str
 		}
 	}
 	fields := make(map[string]interface{})
-	if id == "" {
-		id = xid.New().String()
-	}
-	documentID := typ + "::" + id
 
 	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
@@ -56,7 +55,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (str
 				}
 				if rvQField.Kind() == reflect.Struct {
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if _, err := h.write(ctx, removeOmitempty(tag), id, rvQField.Interface()); err != nil {
+						if _, err := h.write(ctx, removeOmitempty(tag), id, rvQField.Interface(), f); err != nil {
 							return id, err
 						}
 					}
@@ -68,8 +67,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (str
 			}
 		}
 	}
-
-	_, err := h.state.bucket.Insert(documentID, fields, 0)
+	_, err := f(typ, id, q, -1)
 	return id, err
 }
 
@@ -179,54 +177,19 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 	return nil
 }
 
-func (h *Handler) Upsert(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
-	if !h.state.inspect(typ) {
-		err := h.state.setType(typ, typ)
-		if err != nil {
-			return err
-		}
-	}
-	fields := make(map[string]interface{})
+func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (string, error) {
 	if id == "" {
 		id = xid.New().String()
 	}
-	documentID := typ + "::" + id
-
-	rvQ := reflect.ValueOf(ptr)
-	rtQ := rvQ.Type()
-
-	if rtQ.Kind() == reflect.Ptr {
-		rvQ = reflect.Indirect(rvQ)
-		rtQ = rvQ.Type()
+	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl int) (gocb.Cas, error) {
+		documentID := typ + "::" + id
+		return h.state.bucket.Upsert(documentID, q, uint32(ttl))
+	})
+	if err != nil {
+		return "", err
 	}
+	return id, nil
 
-	if rtQ.Kind() == reflect.Struct {
-		for i := 0; i < rvQ.NumField(); i++ {
-			rvQField := rvQ.Field(i)
-			rtQField := rtQ.Field(i)
-
-			if rvQField.Kind() == reflect.Ptr {
-				rvQField = reflect.Indirect(rvQField)
-			}
-			if rvQField.Kind() == reflect.Struct {
-				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-					if strings.Contains(tag, ",omitempty") {
-						tag = strings.Replace(tag, ",omitempty", "", -1)
-					}
-					if err := h.Upsert(ctx, tag, id, rvQField.Interface(), ttl); err != nil {
-						return err
-					}
-				}
-			} else {
-				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-					fields[tag] = rvQField.Interface()
-				}
-			}
-		}
-	}
-
-	_, err := h.state.bucket.Upsert(documentID, fields, ttl)
-	return err
 }
 
 func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl int) error {
