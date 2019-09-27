@@ -3,6 +3,7 @@ package odatas
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -39,7 +40,7 @@ func TestSearchWithIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("One search time: %v\n%+v", start, err)
 	}
-	fmt.Printf("One search time: %v\nFound: %+v", time.Since(start), resp.Metrics())
+	fmt.Printf("One search time: %v\nFound: %+v\n", time.Since(start), resp.Metrics())
 }
 
 func TestSearchWithoutIndex(t *testing.T) {
@@ -52,6 +53,7 @@ func TestSearchWithoutIndex(t *testing.T) {
 		t.Fatalf("One search time: %v\n%+v", start, err)
 	}
 	fmt.Printf("One search time: %v\nFound: %+v", time.Since(start), resp.Metrics())
+	log.Println("")
 }
 
 func BenchmarkWithIndex(b *testing.B) {
