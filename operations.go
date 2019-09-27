@@ -12,7 +12,7 @@ import (
 	"reflect"
 )
 
-func (h *Handler) Write(ctx context.Context, typ string, q interface{}) (string, error) {
+func (h *Handler) Insert(ctx context.Context, typ string, q interface{}) (string, error) {
 	id, err := h.write(ctx, typ, "", q)
 	if err != nil {
 		return "", err
@@ -70,10 +70,19 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (str
 	return id, err
 }
 
-func (h *Handler) Read(ctx context.Context, typ, id string, ptr interface{}) error {
-	documentID := typ + "::" + id
+func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
+	if err := h.read(ctx, typ, id, ptr, -1, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
+		documentID := typ + "::" + id
+		return h.state.bucket.Get(documentID, ptr)
+	}); err != nil {
+		return err
+	}
+	return nil
+}
 
-	_, err := h.state.bucket.Get(documentID, ptr)
+func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl int, f func(string, string, interface{}, int) (gocb.Cas, error)) error {
+
+	_, err := f(typ, id, ptr, ttl)
 	if err != nil {
 		return err
 	}
@@ -94,7 +103,7 @@ func (h *Handler) Read(ctx context.Context, typ, id string, ptr interface{}) err
 						if strings.Contains(tag, ",omitempty") {
 							tag = strings.Replace(tag, ",omitempty", "", -1)
 						}
-						if err = h.Read(ctx, tag, id, rvQField.Interface()); err != nil {
+						if err = h.Get(ctx, tag, id, rvQField.Interface()); err != nil {
 							return err
 						}
 					}
@@ -193,7 +202,7 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 //	return err
 //}
 
-func (h *Handler) Touch(typ, id string, ptr interface{}, ttl int) error {
+func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl int) error {
 	types := []string{typ}
 	e := getDocumentTypes(ptr, types, id)
 	if e != nil {
@@ -209,7 +218,13 @@ func (h *Handler) Touch(typ, id string, ptr interface{}, ttl int) error {
 	return nil
 }
 
-func GetAndTouch() error {
+func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl int) error {
+	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
+		documentID := typ + "::" + id
+		return h.state.bucket.Get(documentID, ptr)
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 

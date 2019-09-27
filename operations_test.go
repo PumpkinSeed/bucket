@@ -17,7 +17,7 @@ func TestWrite(t *testing.T) {
 
 func TestWritePtrValue(t *testing.T) {
 	ws := generate()
-	_, err := th.Write(context.Background(), "webshop", &ws)
+	_, err := th.Insert(context.Background(), "webshop", &ws)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestWritePtrValue(t *testing.T) {
 
 func testInsert() (webshop, string, error) {
 	ws := generate()
-	id, err := th.Write(context.Background(), "webshop", ws)
+	id, err := th.Insert(context.Background(), "webshop", ws)
 	return ws, id, err
 }
 
@@ -36,7 +36,7 @@ func TestRead(t *testing.T) {
 	}
 
 	ws := webshop{}
-	if err := th.Read(context.Background(), "webshop", id, &ws); err != nil {
+	if err := th.Get(context.Background(), "webshop", id, &ws); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", ws)
@@ -89,7 +89,40 @@ func TestTouch(t *testing.T) {
 			Description: "",
 		},
 	}
-	if err := th.Touch("webshop", ID, &ws, 10); err != nil {
+	if err := th.Touch(context.Background(), "webshop", ID, &ws, 10); err != nil {
+		t.Error("error", err)
+	}
+}
+
+func TestGetAndTouch(t *testing.T) {
+	_, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ws := webshop{
+		Email: "",
+		Product: &product{
+			ID:          "",
+			UserID:      "",
+			StoreID:     "",
+			Name:        "",
+			Description: "",
+			Slug:        "",
+			Price:       0,
+			SalePrice:   0,
+			CurrencyID:  0,
+			OnSale:      0,
+			Status:      "",
+		},
+		Store: &store{
+			ID:          "",
+			UserID:      "",
+			Name:        "",
+			Description: "",
+		},
+	}
+	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != nil {
 		t.Error("error", err)
 	}
 }
@@ -133,17 +166,17 @@ func BenchmarkInsertEmb(b *testing.B) {
 
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = th.Write(context.Background(), "webshop", generate())
+		_, _ = th.Insert(context.Background(), "webshop", generate())
 	}
 }
 
 func BenchmarkGetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		ID, _ := th.Write(context.Background(), "webshop", generate())
+		ID, _ := th.Insert(context.Background(), "webshop", generate())
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
-		_ = th.Read(context.Background(), "webshop", ID, webshop{})
+		_ = th.Get(context.Background(), "webshop", ID, webshop{})
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
@@ -154,7 +187,7 @@ func BenchmarkGetEmbedded(b *testing.B) {
 		_, id, _ := testInsert()
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
-		_ = th.Read(context.Background(), "webshop", id, &webshop{})
+		_ = th.Get(context.Background(), "webshop", id, &webshop{})
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
