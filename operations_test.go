@@ -102,6 +102,23 @@ func TestReadPrimitivePtr(t *testing.T) {
 	fmt.Println(*ww.Job)
 }
 
+func TestReadNonPointerInput(t *testing.T) {
+	a := "a"
+	type wtyp struct {
+		Job *string `json:"name,omitempty"`
+	}
+	w := wtyp{Job: &a}
+	id, errInsert := th.Write(context.Background(), "webshop", w)
+	if errInsert != nil {
+		t.Error("Error")
+	}
+	var ww = wtyp{}
+	errGet := th.Read(context.Background(), "webshop", id, ww)
+	if errGet == nil {
+		t.Error("missing error")
+	}
+}
+
 func BenchmarkInsertEmb(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _, _ = testInsert()
