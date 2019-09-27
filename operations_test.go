@@ -90,6 +90,14 @@ func TestRead(t *testing.T) {
 	fmt.Printf("%+v\n", ws)
 }
 
+func TestIDNotFoundError(t *testing.T) {
+	id := "123"
+	ws := webshop{}
+	if err := th.Read(context.Background(), "webshop", id, &ws); err == nil {
+		t.Fail()
+	}
+}
+
 func TestReadPrimitivePtrNil(t *testing.T) {
 	a := "a"
 	type wtyp struct {
