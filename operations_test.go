@@ -32,7 +32,7 @@ func TestWritePrimitivePtr(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{Name: &asd}
-	_, err := th.Write(context.Background(), "webshop", s)
+	_, err := th.Insert(context.Background(), "webshop", s)
 	if err != nil {
 		t.Error("Missing error")
 	}
@@ -43,7 +43,7 @@ func TestWritePrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
-	_, err := th.Write(context.Background(), "webshop", s)
+	_, err := th.Insert(context.Background(), "webshop", s)
 	if err != nil {
 		t.Error("Missing error")
 	}
@@ -54,7 +54,7 @@ func TestWriteNotExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	_, err := th.Write(context.Background(), "member", s)
+	_, err := th.Insert(context.Background(), "member", s)
 	if err != nil {
 		t.Error("Missing error")
 	}
@@ -65,7 +65,7 @@ func TestWriteExpectError(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	id, err := th.Write(context.Background(), "member", s)
+	id, err := th.Insert(context.Background(), "member", s)
 	if err != nil {
 		t.Error("Missing error")
 	}
@@ -100,12 +100,12 @@ func TestReadPrimitivePtrNil(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Write(context.Background(), "webshop", test)
+	id, errInsert := th.Insert(context.Background(), "webshop", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
 	var testGet = wtyp{Job: nil}
-	errGet := th.Read(context.Background(), "webshop", id, &testGet)
+	errGet := th.Get(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("Error")
 	}
@@ -118,13 +118,13 @@ func TestReadPrimitivePtr(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Write(context.Background(), "webshop", test)
+	id, errInsert := th.Insert(context.Background(), "webshop", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
 	b := "b"
 	var testGet = wtyp{Job: &b}
-	errGet := th.Read(context.Background(), "webshop", id, &testGet)
+	errGet := th.Get(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("Error")
 	}
@@ -137,12 +137,12 @@ func TestReadNonPointerInput(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Write(context.Background(), "webshop", test)
+	id, errInsert := th.Insert(context.Background(), "webshop", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
 	var testGet = wtyp{}
-	errGet := th.Read(context.Background(), "webshop", id, &testGet)
+	errGet := th.Get(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("error")
 	}
@@ -155,12 +155,12 @@ func TestReadNotExportedField(t *testing.T) {
 		job string
 	}
 	testInsert := wtyp{job: a}
-	id, errInsert := th.Write(context.Background(), "webshop", testInsert)
+	id, errInsert := th.Insert(context.Background(), "webshop", testInsert)
 	if errInsert != nil {
 		t.Error("Error")
 	}
 	var testGet = wtyp{}
-	errGet := th.Read(context.Background(), "webshop", id, &testGet)
+	errGet := th.Get(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("error")
 	}
@@ -171,7 +171,7 @@ func TestReadNotExportedField(t *testing.T) {
 func TestIDNotFoundError(t *testing.T) {
 	id := "123"
 	ws := webshop{}
-	if err := th.Read(context.Background(), "webshop", id, &ws); err == nil {
+	if err := th.Get(context.Background(), "webshop", id, &ws); err == nil {
 		t.Error("read with invalid ID")
 	}
 }
@@ -334,11 +334,11 @@ func BenchmarkGetPtr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		job := jobtyp{Job: &j}
 		startInsert := time.Now()
-		id, _ := th.Write(context.Background(), "job", job)
+		id, _ := th.Insert(context.Background(), "job", job)
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		var jobRead jobtyp
 		start := time.Now()
-		_ = th.Read(context.Background(), "job", id, &jobRead)
+		_ = th.Get(context.Background(), "job", id, &jobRead)
 		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
