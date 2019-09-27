@@ -165,53 +165,53 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 	return nil
 }
 
-func (h *Handler) Upsert(id, t string, ptr interface{}, ttl int) error {
-	fields := make(map[string]interface{})
-	documentID := t + "::" + id
-
-	if reflect.ValueOf(ptr).Kind() == reflect.Struct {
-		v := reflect.ValueOf(ptr)
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Field(i)
-			if field.Kind() == reflect.Struct {
-				a := v.Type().Field(i)
-				b := field.Interface()
-				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
-				if err := h.Upsert(id, fieldName, b, ttl); err != nil {
-					return err
-				}
-			} else {
-				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
-				fields[k] = fmt.Sprintf("%v", field)
-			}
-		}
-	} else {
-		return errors.New("not a struct")
-	}
-
-	_, err := h.state.bucket.Upsert(documentID, fields, uint32(ttl))
-	return err
-}
-
-func (h *Handler) Touch(id, t string, ptr interface{}, ttl int) error {
-	types := []string{t}
-	e := h.getDocumentTypes(ptr, id, types)
-	if e != nil {
-		return e
-	}
-
-	for _, typ := range types {
-		_, err := h.state.bucket.Touch(typ+"::"+id, 0, uint32(ttl))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func GetAndTouch() error {
-	return nil
-}
+//func (h *Handler) Upsert(id, t string, ptr interface{}, ttl int) error {
+//	fields := make(map[string]interface{})
+//	documentID := t + "::" + id
+//
+//	if reflect.ValueOf(ptr).Kind() == reflect.Struct {
+//		v := reflect.ValueOf(ptr)
+//		for i := 0; i < v.NumField(); i++ {
+//			field := v.Field(i)
+//			if field.Kind() == reflect.Struct {
+//				a := v.Type().Field(i)
+//				b := field.Interface()
+//				fieldName := strings.Split(a.Tag.Get("json"), ",")[0]
+//				if err := h.Upsert(id, fieldName, b, ttl); err != nil {
+//					return err
+//				}
+//			} else {
+//				k := strings.Split(v.Type().Field(i).Tag.Get("json"), ",")[0]
+//				fields[k] = fmt.Sprintf("%v", field)
+//			}
+//		}
+//	} else {
+//		return errors.New("not a struct")
+//	}
+//
+//	_, err := h.state.bucket.Upsert(documentID, fields, uint32(ttl))
+//	return err
+//}
+//
+//func (h *Handler) Touch(id, t string, ptr interface{}, ttl int) error {
+//	types := []string{t}
+//	e := h.getDocumentTypes(ptr, id, types)
+//	if e != nil {
+//		return e
+//	}
+//
+//	for _, typ := range types {
+//		_, err := h.state.bucket.Touch(typ+"::"+id, 0, uint32(ttl))
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
+//
+//func GetAndTouch() error {
+//	return nil
+//}
 
 func (h *Handler) Ping() (*gocb.PingReport, error) {
 	report, err := h.state.bucket.Ping(nil)

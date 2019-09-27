@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/brianvoe/gofakeit"
 )
 
 func TestWrite(t *testing.T) {
@@ -43,69 +41,68 @@ func TestRead(t *testing.T) {
 	fmt.Printf("%+v\n", ws)
 }
 
-func TestTouch(t *testing.T) {
-	_, ID, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
+//func TestTouch(t *testing.T) {
+//	_, ID, err := testInsert()
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//
+//	ws := webshop{
+//		Email: "",
+//		Product: &product{
+//			ID:          "",
+//			UserID:      "",
+//			StoreID:     "",
+//			Name:        "",
+//			Description: "",
+//			Slug:        "",
+//			Price:       0,
+//			SalePrice:   0,
+//			CurrencyID:  0,
+//			OnSale:      0,
+//			Status:      "",
+//		},
+//		Store: &store{
+//			ID:          "",
+//			UserID:      "",
+//			Name:        "",
+//			Description: "",
+//		},
+//	}
+//	splitedID := strings.Split(ID, "::")
+//	if err := th.Touch(splitedID[1], splitedID[0], &ws, 10); err != nil {
+//		t.Fail()
+//	}
+//	fmt.Printf("%+v\n", ws)
+//}
 
-	ws := webshop{
-		Email: "",
-		Product: &product{
-			ID:          "",
-			UserID:      "",
-			StoreID:     "",
-			Name:        "",
-			Description: "",
-			Slug:        "",
-			Price:       0,
-			SalePrice:   0,
-			CurrencyID:  0,
-			OnSale:      0,
-			Status:      "",
-		},
-		Store: &store{
-			ID:          "",
-			UserID:      "",
-			Name:        "",
-			Description: "",
-		},
-	}
-	splitedID := strings.Split(ID, "::")
-	if err := th.Touch(splitedID[1], splitedID[0], &ws, 10); err != nil {
-		t.Fail()
-	}
-	fmt.Printf("%+v\n", ws)
-}
-
-func TestUpsert(t *testing.T) {
-	ws, ID, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	updateableWs := *(&ws)
-	updateableWs.Email = gofakeit.Email()
-	updateableWs.Product.Name = gofakeit.Name()
-
-	if err := th.Upsert(ID, "webshop", updateableWs, 0); err != nil {
-		t.Fatal(err)
-	}
-	if ws.Email == updateableWs.Email {
-		t.Error("Update error at Email")
-	}
-	if ws.Product.Name == updateableWs.Product.Name {
-		t.Error("Update error at Product's Name")
-	}
-
-}
+//func TestUpsert(t *testing.T) {
+//	ws, ID, err := testInsert()
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	updateableWs := *(&ws)
+//	updateableWs.Email = gofakeit.Email()
+//	updateableWs.Product.Name = gofakeit.Name()
+//
+//	if err := th.Upsert(ID, "webshop", updateableWs, 0); err != nil {
+//		t.Fatal(err)
+//	}
+//	if ws.Email == updateableWs.Email {
+//		t.Error("Update error at Email")
+//	}
+//	if ws.Product.Name == updateableWs.Product.Name {
+//		t.Error("Update error at Product's Name")
+//	}
+//
+//}
 
 func TestRemove(t *testing.T) {
 	_, ID, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
 	}
-	split := strings.Split(ID, "::")
-	if err := th.Remove(split[1], split[0], &webshop{}); err != nil {
+	if err := th.Remove(context.Background(), "webshop", ID, &webshop{}); err != nil {
 		t.Fatal(err)
 	}
 }
