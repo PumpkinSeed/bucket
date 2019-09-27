@@ -96,7 +96,7 @@ func TestIDNotFoundError(t *testing.T) {
 	id := "123"
 	ws := webshop{}
 	if err := th.Read(context.Background(), "webshop", id, &ws); err == nil {
-		t.Fail()
+		t.Error("read with invalid ID")
 	}
 }
 
