@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWrite(t *testing.T) {
@@ -103,17 +105,17 @@ func TestReadPrimitivePtrNil(t *testing.T) {
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
-	w := wtyp{Job: &a}
-	id, errInsert := th.Write(context.Background(), "webshop", w)
+	test := wtyp{Job: &a}
+	id, errInsert := th.Write(context.Background(), "webshop", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
-	var ww = wtyp{Job: nil}
-	errGet := th.Read(context.Background(), "webshop", id, &ww)
+	var testGet = wtyp{Job: nil}
+	errGet := th.Read(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("Error")
 	}
-	fmt.Println(*ww.Job)
+	assert.Equal(t, test, testGet, "They should be equal")
 }
 
 func TestReadPrimitivePtr(t *testing.T) {
@@ -121,18 +123,18 @@ func TestReadPrimitivePtr(t *testing.T) {
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
-	w := wtyp{Job: &a}
-	id, errInsert := th.Write(context.Background(), "webshop", w)
+	test := wtyp{Job: &a}
+	id, errInsert := th.Write(context.Background(), "webshop", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
 	b := "b"
-	var ww = wtyp{Job: &b}
-	errGet := th.Read(context.Background(), "webshop", id, &ww)
+	var testGet = wtyp{Job: &b}
+	errGet := th.Read(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("Error")
 	}
-	fmt.Println(*ww.Job)
+	assert.Equal(t, test, testGet, "They should be equal")
 }
 
 func TestReadNonPointerInput(t *testing.T) {
@@ -140,16 +142,17 @@ func TestReadNonPointerInput(t *testing.T) {
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
-	w := wtyp{Job: &a}
-	id, errInsert := th.Write(context.Background(), "webshop", w)
+	test := wtyp{Job: &a}
+	id, errInsert := th.Write(context.Background(), "webshop", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
-	var ww = wtyp{}
-	errGet := th.Read(context.Background(), "webshop", id, &ww)
+	var testGet = wtyp{}
+	errGet := th.Read(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("error")
 	}
+	assert.Equal(t, test, testGet, "They should be equal")
 }
 
 func TestReadNotExportedField(t *testing.T) {
@@ -157,17 +160,18 @@ func TestReadNotExportedField(t *testing.T) {
 	type wtyp struct {
 		job string
 	}
-	w := wtyp{job: a}
-	id, errInsert := th.Write(context.Background(), "webshop", w)
+	testInsert := wtyp{job: a}
+	id, errInsert := th.Write(context.Background(), "webshop", testInsert)
 	if errInsert != nil {
 		t.Error("Error")
 	}
-	var ww = wtyp{}
-	errGet := th.Read(context.Background(), "webshop", id, &ww)
+	var testGet = wtyp{}
+	errGet := th.Read(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("error")
 	}
-	fmt.Println(ww)
+	assert.NotEqual(t, testInsert, testGet, "They should be not equal")
+
 }
 
 func BenchmarkInsertEmb(b *testing.B) {
