@@ -65,13 +65,6 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}) (str
 	return id, err
 }
 
-func removeOmitempty(tag string) string {
-	if strings.Contains(tag, ",omitempty") {
-		tag = strings.Replace(tag, ",omitempty", "", -1)
-	}
-	return tag
-}
-
 func (h *Handler) Read(ctx context.Context, typ, id string, ptr interface{}) error {
 	documentID := typ + "::" + id
 
