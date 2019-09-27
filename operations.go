@@ -248,7 +248,7 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl int) error {
 	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
-		return h.state.bucket.Get(documentID, ptr)
+		return h.state.bucket.GetAndTouch(documentID, uint32(ttl), ptr)
 	}); err != nil {
 		return err
 	}
