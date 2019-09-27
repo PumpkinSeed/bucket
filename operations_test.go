@@ -138,7 +138,7 @@ func TestReadNonPointerInput(t *testing.T) {
 		t.Error("Error")
 	}
 	var ww = wtyp{}
-	errGet := th.Read(context.Background(), "webshop", id, ww)
+	errGet := th.Read(context.Background(), "webshop", id, &ww)
 	if errGet != nil {
 		t.Error("error")
 	}
