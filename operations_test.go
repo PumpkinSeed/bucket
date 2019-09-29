@@ -3,7 +3,7 @@ package odatas
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/rs/xid"
 	"strings"
 	"testing"
 	"time"
@@ -36,7 +36,6 @@ func TestWritePrimitivePtr(t *testing.T) {
 	if err != nil {
 		t.Error("Missing error")
 	}
-	log.Println(err)
 }
 
 func TestWritePrimitivePtrNil(t *testing.T) {
@@ -47,10 +46,9 @@ func TestWritePrimitivePtrNil(t *testing.T) {
 	if err != nil {
 		t.Error("Missing error")
 	}
-	log.Println(err)
 }
 
-func TestWriteNotExportedField(t *testing.T) {
+func TestWriteNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
@@ -58,7 +56,6 @@ func TestWriteNotExportedField(t *testing.T) {
 	if err != nil {
 		t.Error("Missing error")
 	}
-	log.Println(err)
 }
 
 func TestWriteExpectDuplicateError(t *testing.T) {
@@ -265,6 +262,96 @@ func TestGetAndTouch(t *testing.T) {
 	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != nil {
 		t.Error("error", err)
 	}
+}
+
+func TestUpsertNewID(t *testing.T) {
+	if _, _, err := testUpsert(xid.New().String()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpsertSameID(t *testing.T) {
+	id := xid.New().String()
+	if _, _, err := testUpsert(id); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := testUpsert(id); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpsertPtrValueNewID(t *testing.T) {
+	ws := generate()
+	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), &ws, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUpsertPtrValueSameID(t *testing.T) {
+	ws := generate()
+	id := xid.New().String()
+	_, err := th.Upsert(context.Background(), "webshop", id, &ws, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wsD := generate()
+	_, errD := th.Upsert(context.Background(), "webshop", id, &wsD, 1)
+	if errD != nil {
+		t.Fatal(errD)
+	}
+	errGet := th.Get(context.Background(), "webshop", id, &ws)
+	if errGet != nil {
+		t.Fatal(errGet)
+	}
+	assert.ObjectsAreEqual(wsD, ws)
+}
+
+func TestUpsertPrimitivePtr(t *testing.T) {
+	asd := "asd"
+	s := struct {
+		Name *string `json:"name,omitempty"`
+	}{Name: &asd}
+	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	if err != nil {
+		t.Error("Missing error")
+	}
+}
+
+func TestUpsertPrimitivePtrNil(t *testing.T) {
+	s := struct {
+		Name *string `json:"name,omitempty"`
+	}{}
+	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	if err != nil {
+		t.Error("Missing error")
+	}
+}
+
+func TestUpsertNonExportedField(t *testing.T) {
+	s := struct {
+		name string
+	}{name: "Jackson"}
+	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	if err != nil {
+		t.Error("Missing error")
+	}
+}
+
+func TestUpsertEmptyID(t *testing.T) {
+	_, id, err := testUpsert("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id == "" {
+		t.Error("invalid id")
+	}
+}
+
+func testUpsert(id string) (webshop, string, error) {
+	ws := generate()
+	id, err := th.Upsert(context.Background(), "webshop", id, ws, 0)
+	return ws, id, err
 }
 
 //func TestUpsert(t *testing.T) {
