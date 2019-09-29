@@ -61,24 +61,25 @@ func TestWriteNotExportedField(t *testing.T) {
 	log.Println(err)
 }
 
-//func TestWriteExpectError(t *testing.T) {
-//	s := struct {
-//		name string
-//	}{name: "Jackson"}
-//	id, err := th.Insert(context.Background(), "member", s)
-//	if err != nil {
-//		t.Error("Missing error")
-//	}
-//
-//	q:= func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
-//		documentID := typ + "::" + id
-//		return h.state.bucket.Insert(documentID, ptr, 0), nil
-//	}
-//	_, errDuplicateInsert := th.write(context.Background(), "member", id, s,q)
-//	if errDuplicateInsert == nil {
-//		t.Error("error missing", errDuplicateInsert)
-//	}
-//}
+func TestWriteExpectDuplicateError(t *testing.T) {
+	s := struct {
+		name string
+	}{name: "Jackson"}
+	ctx := context.Background()
+	id, err := th.Insert(ctx, "member", s)
+	if err != nil {
+		t.Error("Missing error")
+	}
+	f := func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
+		documentID := typ + "::" + id
+		return th.state.bucket.Insert(documentID, ptr, 0)
+	}
+	_, errDuplicateInsert := th.write(ctx, "member", id, s, f)
+	if errDuplicateInsert == nil {
+		t.Error("error missing", errDuplicateInsert)
+	}
+	assert.EqualValues(t, "key already exists, if a cas was provided the key exists with a different cas", errDuplicateInsert.Error(), "wrong error msg")
+}
 
 func testInsert() (webshop, string, error) {
 	ws := generate()
