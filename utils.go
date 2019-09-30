@@ -2,8 +2,11 @@ package odatas
 
 import (
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -22,6 +25,7 @@ func defaultHandler() *Handler {
 		Password:       "password",
 		BucketName:     bucketName,
 		BucketPassword: "",
+		Separator:      "::",
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -34,4 +38,41 @@ func removeOmitempty(tag string) string {
 		tag = strings.Replace(tag, ",omitempty", "", -1)
 	}
 	return tag
+}
+
+func getDocumentTypes(ptr interface{}, typs []string, id string) error {
+	typ := reflect.TypeOf(ptr).Elem()
+	val := reflect.ValueOf(ptr).Elem()
+	if typ.Kind() != reflect.Struct {
+		return errors.New("second argument must be a struct")
+	}
+	for i := 0; i < typ.NumField(); i++ {
+		typeField := typ.Field(i)
+		structField := val.Field(i)
+		if !structField.CanSet() {
+			fmt.Println("field ", i, "cannot be set")
+			continue
+		}
+		structFieldKind := structField.Kind()
+		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
+		if structFieldKind == reflect.Struct {
+			err := getDocumentTypes(structField.Addr().Interface(), typs, id)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		if inputFieldName == "" {
+			inputFieldName = typeField.Name
+			if structFieldKind == reflect.Struct {
+				err := getDocumentTypes(structField.Addr().Interface(), typs, id)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+		}
+		typs = append(typs, inputFieldName)
+	}
+	return nil
 }

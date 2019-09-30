@@ -79,33 +79,31 @@ func (s *state) setType(name, prefix string) error {
 	return nil
 }
 
-// Not used method
-//func (s *state) getType(name string) (string, error) {
-//	s.RLock()
-//	defer s.RUnlock()
-//	if v, ok := s.DocumentTypes[name]; ok {
-//		return v, nil
-//	}
-//	return "", ErrDocumentTypeDoesntExists
-//}
+func (s *state) getType(name string) (string, error) {
+	s.RLock()
+	defer s.RUnlock()
+	if v, ok := s.DocumentTypes[name]; ok {
+		return v, nil
+	}
+	return "", ErrDocumentTypeDoesntExists
+}
 
-// Not used method
-//func (s *state) deleteType(name string) error {
-//	s.Lock()
-//	defer s.Unlock()
-//	if _, ok := s.DocumentTypes[name]; ok {
-//		delete(s.DocumentTypes, name)
-//
-//		err := s.updateState()
-//		if err != nil {
-//			return err
-//		}
-//
-//		return nil
-//	}
-//
-//	return ErrDocumentTypeDoesntExists
-//}
+func (s *state) deleteType(name string) error {
+	s.Lock()
+	defer s.Unlock()
+	if _, ok := s.DocumentTypes[name]; ok {
+		delete(s.DocumentTypes, name)
+
+		err := s.updateState()
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return ErrDocumentTypeDoesntExists
+}
 
 func (s *state) validate() (bool, error) {
 	key := "doc_type"

@@ -60,33 +60,6 @@ func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }
 
-//func (h *Handler) Insert(ctx *context.Context, bucketName, key string, value interface{}) error {
-//	prefix, err := h.state.getType(bucketName)
-//	if err != nil {
-//		if err2 := h.state.newType(bucketName, bucketName); err2 != nil {
-//			return err2
-//		}
-//
-//		prefix = bucketName + h.state.separator
-//	}
-//	if _, err = h.bucket.Upsert(prefix+key, value, 0); err != nil {
-//		return err
-//	}
-//
-//	return nil
-//}
-//
-//func (h *Handler) Get(ctx *context.Context, bucketName, key string) (interface{}, error) {
-//	var res interface{}
-//	prefix, err := h.state.getType(bucketName)
-//	if err != nil {
-//		return res, err
-//	}
-//
-//	_, err = h.bucket.Get(prefix+key, res)
-//	if err != nil {
-//		return res, err
-//	}
-//
-//	return res, nil
-//}
+func (h *Handler) ValidateState() (bool, error) {
+	return h.state.validate()
+}
