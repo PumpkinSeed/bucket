@@ -3,6 +3,7 @@ package odatas
 import (
 	"context"
 	"fmt"
+	"github.com/volatiletech/null"
 	"log"
 	"strings"
 	"testing"
@@ -15,6 +16,26 @@ func TestWrite(t *testing.T) {
 	if _, _, err := testInsert(); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestWriteNullString(t *testing.T) {
+	type nullStrTest struct {
+		Bin         int         `json:"bin"`
+		CardBrand   string      `json:"card_brand"`
+		IssuingBank string      `json:"issuing_bank"`
+		CardType    null.String `json:"card_type"`
+	}
+	cardTypeWrite := nullStrTest{
+		Bin:         50003,
+		CardBrand:   "VISA",
+		IssuingBank: "",
+		CardType:    null.String{String: "US", Valid: true},
+	}
+	_, err := th.Write(context.Background(), "card_type", cardTypeWrite)
+	if err != nil {
+		t.Error(err)
+	}
+
 }
 
 func TestWritePtrValue(t *testing.T) {
@@ -90,6 +111,35 @@ func TestRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", ws)
+}
+
+func TestReadNullString(t *testing.T) {
+	type nullStrTest struct {
+		Bin         int         `json:"bin"`
+		CardBrand   string      `json:"card_brand"`
+		IssuingBank string      `json:"issuing_bank"`
+		CardType    null.String `json:"card_type"`
+	}
+	cardTypeWrite := nullStrTest{
+		Bin:         50003,
+		CardBrand:   "VISA",
+		IssuingBank: "",
+		CardType:    null.String{String: "US", Valid: true},
+	}
+	id, err := th.Write(context.Background(), "card_type", cardTypeWrite)
+	if err != nil {
+		t.Error(err)
+	}
+	cardTypeRead := nullStrTest{
+		Bin:         0,
+		CardBrand:   "",
+		IssuingBank: "",
+		CardType:    null.String{},
+	}
+	if err := th.Read(context.Background(), "card_type", id, &cardTypeRead); err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, cardTypeWrite, cardTypeRead, "should be equal")
 }
 
 func TestIDNotFoundError(t *testing.T) {
