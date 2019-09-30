@@ -44,8 +44,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f fu
 		for i := 0; i < rvQ.NumField(); i++ {
 			rvQField := rvQ.Field(i)
 			rtQField := rtQ.Field(i)
+			_, hasReferenceTag := rtQField.Tag.Lookup("referenced")
 
-			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() {
+			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasReferenceTag {
 				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 					fields[removeOmitempty(tag)] = nil
 				}
@@ -53,7 +54,6 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f fu
 				if rvQField.Kind() == reflect.Ptr {
 					rvQField = reflect.Indirect(rvQField)
 				}
-				_, hasReferenceTag := rtQField.Tag.Lookup("referenced")
 
 				if rvQField.Kind() == reflect.Struct && hasReferenceTag {
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
@@ -69,7 +69,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f fu
 			}
 		}
 	}
-	_, err := f(typ, id, q, -1)
+	_, err := f(typ, id, fields, -1)
 	return id, err
 }
 
