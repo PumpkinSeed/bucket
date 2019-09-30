@@ -8,13 +8,6 @@ sudo: required
 services:
   - docker
 
-# Force-enable Go modules. Also force go to use the code in vendor/
-# These will both be unnecessary when Go 1.13 lands.
-env:
-  - GO111MODULE=on
-  - GOFLAGS='-mod vendor'
-  - DOCKER_COMPOSE_VERSION=1.23.2
-
 # You don't need to test on very old versions of the Go compiler. It's the user's
 # responsibility to keep their compiler up to date.
 go:
@@ -38,15 +31,17 @@ before_install:
 # build and immediately stop. It's sorta like having set -e enabled in bash.
 # Make sure golangci-lint is vendored.
 before_script:
-  - go install github.com/golangci/golangci-lint/cmd/golangci-lint
-  - - docker-compose -f test/docker-compose.yml up -d
+  - GO111MODULE=on go install github.com/golangci/golangci-lint/cmd/golangci-lint
+  - docker-compose -f test/docker-compose.yml up -d
 
 # script always runs to completion (set +e). If we have linter issues AND a
 # failing test, we want to see both. Configure golangci-lint with a
 # .golangci.yml file at the top level of your repo.
 script:
-  - golangci-lint run       # run a bunch of code checkers/linters in parallel
-  - go get
+  - GO111MODULE=on go get
+  - GO111MODULE=on go mod vendor
+  - golangci-lint run --skip-dirs-use-default  # run a bunch of code checkers/linters in parallel
+  - docker-compose -f test/docker-compose.yml logs
   - go test -v -race ./...  # Run all the tests with the race detector enabled
 
 after_script:

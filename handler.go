@@ -12,7 +12,7 @@ import (
 type Handler struct {
 	state *state
 
-	address     string
+	//address     string // not used
 	httpAddress string
 
 	http *http.Client
