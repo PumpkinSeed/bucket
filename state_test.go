@@ -43,7 +43,6 @@ func TestValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	_, err = s.validate()
 	if err != nil {
 		t.Fatal(err)

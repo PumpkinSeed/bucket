@@ -84,8 +84,8 @@ type webshop struct {
 	ShippingMethod               string   `json:"shipping_method"`
 	WillBePaidLater              bool     `json:"will_be_paid_later"`
 	PaymentTransactionId         string   `json:"payment_transaction_id"`
-	Product                      *product `json:"product"`
-	Store                        *store   `json:"store,omitempty"`
+	Product                      *product `json:"product" referenced:"true"`
+	Store                        *store   `json:"store,omitempty" referenced:"true"`
 }
 
 type product struct {
