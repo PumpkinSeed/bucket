@@ -32,19 +32,7 @@ func TestUpdateState(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	s, err := newState(&Configuration{
-		Username:         "Administrator",
-		Password:         "password",
-		BucketName:       "company",
-		BucketPassword:   "",
-		ConnectionString: "couchbase://localhost",
-		Separator:        "::",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = s.validate()
+	_, err := th.ValidateState()
 	if err != nil {
 		t.Fatal(err)
 	}

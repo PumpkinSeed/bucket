@@ -28,6 +28,10 @@ func seed() {
 		th = defaultHandler()
 	}
 
+	th.SetDocumentType(context.Background(), "order", "order")
+	th.SetDocumentType(context.Background(), "webshop", "webshop")
+	th.SetDocumentType(context.Background(), "product", "product")
+
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
 		log.Print("TestEnv")
@@ -39,9 +43,10 @@ func seed() {
 		}
 		fmt.Printf("Bucket flushed: %v\n", time.Since(start))
 
-		for j := 0; j < 10000; j++ {
+		for j := 0; j < 1000; j++ {
 			instance := generate()
-			_, _ = th.state.bucket.Insert(instance.Token, instance, 0)
+			th.Insert(context.Background(), "webshop", instance)
+			// _, _ = th.state.bucket.Insert(instance.Token, instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
