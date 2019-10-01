@@ -81,7 +81,7 @@ func TestSimpleSearchMatch(t *testing.T) {
 		}
 	}
 
-	searchMatch := "Talia"
+	searchMatch := "processed"
 	mes := time.Now()
 	_, err := th.SimpleSearch(context.Background(), "order_fts_idx", &SearchQuery{
 		Query: searchMatch,
@@ -91,6 +91,10 @@ func TestSimpleSearchMatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	//for _, a := range res {
+	//	fmt.Println(a.Id, a.Score)
+	//	//resp = append(resp, a.Id)
+	//}
 }
 
 func TestSimpleSearchMatchWithFacet(t *testing.T) {

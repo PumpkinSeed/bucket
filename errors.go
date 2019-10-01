@@ -18,4 +18,6 @@ var (
 
 	ErrFirstParameterNotStruct = errors.New("first parameter is not a struct")
 	ErrInputStructPointer      = errors.New("input struct must be pointer")
+
+	ErrInvalidBulkContainer = errors.New("container must be *[]T, with length of ids array")
 )

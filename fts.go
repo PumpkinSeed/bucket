@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/couchbase/gocb"
@@ -160,10 +159,10 @@ func (h *Handler) doSearch(ctx context.Context, query *gocb.SearchQuery) ([]gocb
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Printf("%+v\n", res.Status())
-	for i, v := range res.Hits() {
-		fmt.Printf("%d ---- %+v\n", i, v)
-	}
+	//fmt.Printf("%+v\n", res.Status())
+	//for i, v := range res.Hits() {
+	//	fmt.Printf("%d ---- %+v\n", i, v)
+	//}
 
 	return res.Hits(), res.Facets(), nil
 }
