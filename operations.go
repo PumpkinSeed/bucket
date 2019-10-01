@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -122,11 +121,10 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
 	typs := []string{typ}
-	e := h.remove(ctx, typs, ptr, id)
+	e := getDocumentTypes(ptr, typs, id)
 	if e != nil {
 		return e
 	}
-
 	for _, typ := range typs {
 		_, err := h.state.bucket.Remove(typ+"::"+id, 0)
 		if err != nil {
@@ -136,46 +134,6 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	return nil
 }
 
-func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id string) error {
-	typ := reflect.TypeOf(ptr).Elem()
-	val := reflect.ValueOf(ptr).Elem()
-	if typ.Kind() != reflect.Struct {
-		return ErrFirstParameterNotStruct
-	}
-	for i := 0; i < typ.NumField(); i++ {
-		typeField := typ.Field(i)
-		structField := val.Field(i)
-
-		if !structField.CanSet() {
-			fmt.Println("field ", i, "cannot be set")
-			continue
-		}
-
-		structFieldKind := structField.Kind()
-		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
-		if structFieldKind == reflect.Struct {
-			err := h.remove(ctx, typs, structField.Addr().Interface(), id)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		if inputFieldName == "" {
-			inputFieldName = typeField.Name
-
-			if structFieldKind == reflect.Struct {
-				err := h.remove(ctx, typs, structField.Addr().Interface(), id)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-		}
-		typs = append(typs, inputFieldName)
-	}
-	return nil
-}
 
 func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (string, error) {
 	if id == "" {
