@@ -56,6 +56,20 @@ func TestSearchWithoutIndex(t *testing.T) {
 	log.Println("")
 }
 
+func BenchmarkCreateIndex(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		instance := webshop{}
+
+		if err := th.Index(context.Background(), instance); err != nil {
+			b.Fatal(err)
+		}
+		//indexes, _ := th.GetManager(context.Background()).GetIndexes()
+		//for _, ind := range indexes {
+		//	_ = th.GetManager(context.Background()).DropIndex(ind.Name, true)
+		//}
+	}
+}
+
 func BenchmarkWithIndex(b *testing.B) {
 	if err := th.Index(context.Background(), webshop{}); err != nil {
 		b.Fatal(err)
