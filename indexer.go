@@ -10,7 +10,7 @@ import (
 
 const (
 	tagJson      = "json"
-	tagIndexable = "indexable"
+	tagIndexable = "cb_indexable"
 	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
