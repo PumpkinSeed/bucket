@@ -3,11 +3,9 @@ package odatas
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/couchbase/gocb"
 	"github.com/rs/xid"
+	"reflect"
 )
 
 type writerF func(string, string, interface{}, int) (gocb.Cas, error)
@@ -48,9 +46,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 		for i := 0; i < rvQ.NumField(); i++ {
 			rvQField := rvQ.Field(i)
 			rtQField := rtQ.Field(i)
-			_, hasReferenceTag := rtQField.Tag.Lookup("referenced")
+			refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
 
-			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasReferenceTag {
+			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasRefTag {
 				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 					fields[removeOmitempty(tag)] = nil
 				}
@@ -59,12 +57,14 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 					rvQField = reflect.Indirect(rvQField)
 				}
 
-				if rvQField.Kind() == reflect.Struct && hasReferenceTag {
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if _, err := h.write(ctx, removeOmitempty(tag), id, rvQField.Interface(), f); err != nil {
-							return id, err
-						}
+				if rvQField.Kind() == reflect.Struct && hasRefTag {
+					if refTag == "" {
+						return "", ErrEmptyRefTag
 					}
+					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f); err != nil {
+						return id, err
+					}
+
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 						fields[removeOmitempty(tag)] = rvQField.Interface()
@@ -104,18 +104,18 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 				rvQField := rvQ.Field(i)
 				rtQField := rtQ.Field(i)
 				if rvQField.Kind() == reflect.Ptr {
-					if _, hasReferencedTag := rtQField.Tag.Lookup("referenced"); !hasReferencedTag || rvQField.Type().Elem().Kind() != reflect.Struct {
+					refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
+					if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
 						continue
 					}
 					rvQField.Set(reflect.New(rvQField.Type().Elem()))
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if strings.Contains(tag, ",omitempty") {
-							tag = strings.Replace(tag, ",omitempty", "", -1)
-						}
-						if err = h.Get(ctx, tag, id, rvQField.Interface()); err != nil {
-							return err
-						}
+					if refTag == "" {
+						return ErrEmptyRefTag
 					}
+					if err = h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
+						return err
+					}
+
 				}
 			}
 		}
@@ -157,7 +157,7 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 		}
 
 		structFieldKind := structField.Kind()
-		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
+		inputFieldName := typeField.Tag.Get("referenced")
 		if structFieldKind == reflect.Struct {
 			err := h.remove(ctx, typs, structField.Addr().Interface(), id)
 			if err != nil {
