@@ -18,6 +18,16 @@ func TestWrite(t *testing.T) {
 	}
 }
 
+func TestWriteCustomID(t *testing.T) {
+	cID := xid.New().String() + "Faswwq123942390**12312_+"
+	ws := generate()
+	id, err := th.Insert(context.Background(), "webshop", cID, &ws)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, cID, id, "should be equal")
+}
+
 func TestWritePtrValue(t *testing.T) {
 	ws := generate()
 	id, err := th.Insert(context.Background(), "webshop", "", &ws)
