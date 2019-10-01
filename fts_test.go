@@ -1,4 +1,4 @@
-package odatas
+package bucket
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package odatas
+package bucket
 
 import (
 	"context"
@@ -12,14 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrite(t *testing.T) {
-	_, id, err := testInsert()
-	if err != nil || id == "" {
+func TestInsert(t *testing.T) {
+	if _, id, err := testInsert(); err != nil || id == "" {
 		t.Fatal(err)
 	}
 }
 
-func TestWriteCustomID(t *testing.T) {
+func TestInsertCustomID(t *testing.T) {
 	cID := xid.New().String() + "Faswwq123942390**12312_+"
 	ws := generate()
 	_, id, err := th.Insert(context.Background(), "webshop", cID, &ws)
@@ -29,7 +28,7 @@ func TestWriteCustomID(t *testing.T) {
 	assert.Equal(t, cID, id, "should be equal")
 }
 
-func TestWritePtrValue(t *testing.T) {
+func TestInsertPtrValue(t *testing.T) {
 	ws := generate()
 	cas, id, err := th.Insert(context.Background(), "webshop", "", &ws)
 	if err != nil || id == "" {
@@ -40,7 +39,7 @@ func TestWritePtrValue(t *testing.T) {
 	}
 }
 
-func TestWritePrimitivePtr(t *testing.T) {
+func TestInsertPrimitivePtr(t *testing.T) {
 	asd := "asd"
 	s := struct {
 		Name *string `json:"name,omitempty"`
@@ -54,7 +53,7 @@ func TestWritePrimitivePtr(t *testing.T) {
 	}
 }
 
-func TestWritePrimitivePtrNil(t *testing.T) {
+func TestInsertPrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
@@ -67,7 +66,7 @@ func TestWritePrimitivePtrNil(t *testing.T) {
 	}
 }
 
-func TestWriteNonExportedField(t *testing.T) {
+func TestInsertNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
@@ -80,7 +79,7 @@ func TestWriteNonExportedField(t *testing.T) {
 	}
 }
 
-func TestWriteExpectDuplicateError(t *testing.T) {
+func TestInsertExpectDuplicateError(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
@@ -103,7 +102,7 @@ func testInsert() (webshop, string, error) {
 	return ws, id, err
 }
 
-func TestRead(t *testing.T) {
+func TestGet(t *testing.T) {
 	wsInsert, id, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +115,7 @@ func TestRead(t *testing.T) {
 	assert.Equal(t, wsInsert, wsGet, "should be equal")
 }
 
-func TestReadPrimitivePtrNil(t *testing.T) {
+func TestGetPrimitivePtrNil(t *testing.T) {
 	a := "a"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
@@ -134,7 +133,7 @@ func TestReadPrimitivePtrNil(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadPrimitivePtr(t *testing.T) {
+func TestGetPrimitivePtr(t *testing.T) {
 	a := "a"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
@@ -153,7 +152,7 @@ func TestReadPrimitivePtr(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadNonPointerInput(t *testing.T) {
+func TestGetNonPointerInput(t *testing.T) {
 	a := "a"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
@@ -171,7 +170,7 @@ func TestReadNonPointerInput(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadNonExportedField(t *testing.T) {
+func TestGetNonExportedField(t *testing.T) {
 	a := "helder"
 	type wtyp struct {
 		job string
@@ -190,7 +189,7 @@ func TestReadNonExportedField(t *testing.T) {
 
 }
 
-func TestIDNotFoundError(t *testing.T) {
+func TestGetIDNotFoundError(t *testing.T) {
 	id := "123"
 	ws := webshop{}
 	if err := th.Get(context.Background(), "webshop", id, &ws); err == nil {
