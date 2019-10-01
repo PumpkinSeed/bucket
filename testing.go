@@ -45,7 +45,7 @@ func seed() {
 
 		for j := 0; j < 1000; j++ {
 			instance := generate()
-			th.Insert(context.Background(), "webshop", instance)
+			th.Insert(context.Background(), "webshop", "", instance)
 			// _, _ = th.state.bucket.Insert(instance.Token, instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))

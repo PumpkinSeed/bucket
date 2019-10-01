@@ -14,9 +14,12 @@ type writerF func(string, string, interface{}, int) (gocb.Cas, error)
 type readerF func(string, string, interface{}, int) (gocb.Cas, error)
 type CAS map[string]gocb.Cas
 
-func (h *Handler) Insert(ctx context.Context, typ string, q interface{}) (CAS, string, error) {
+func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (CAS, string, error) {
 	cas := make(map[string]gocb.Cas)
-	id, err := h.write(ctx, typ, xid.New().String(), q, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
+	if id == "" {
+		id = xid.New().String()
+	}
+	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
 		return h.state.bucket.Insert(documentID, ptr, 0)
 	}, cas)
