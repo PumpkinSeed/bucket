@@ -3,7 +3,6 @@ package bucket
 import (
 	"context"
 	"reflect"
-	"strings"
 
 	"github.com/couchbase/gocb"
 	"github.com/rs/xid"
@@ -47,8 +46,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 		for i := 0; i < rvQ.NumField(); i++ {
 			rvQField := rvQ.Field(i)
 			rtQField := rtQ.Field(i)
+			refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
 
-			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() {
+			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasRefTag {
 				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 					fields[removeOmitempty(tag)] = nil
 				}
@@ -56,11 +56,13 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 				if rvQField.Kind() == reflect.Ptr {
 					rvQField = reflect.Indirect(rvQField)
 				}
-				if rvQField.Kind() == reflect.Struct {
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if _, err := h.write(ctx, removeOmitempty(tag), id, rvQField.Interface(), f); err != nil {
-							return id, err
-						}
+
+				if rvQField.Kind() == reflect.Struct && hasRefTag {
+					if refTag == "" {
+						return "", ErrEmptyRefTag
+					}
+					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f); err != nil {
+						return id, err
 					}
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
@@ -101,17 +103,16 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 				rvQField := rvQ.Field(i)
 				rtQField := rtQ.Field(i)
 				if rvQField.Kind() == reflect.Ptr {
-					if rvQField.Type().Elem().Kind() != reflect.Struct {
+					refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
+					if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
 						continue
 					}
 					rvQField.Set(reflect.New(rvQField.Type().Elem()))
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if strings.Contains(tag, ",omitempty") {
-							tag = strings.Replace(tag, ",omitempty", "", -1)
-						}
-						if err = h.Get(ctx, tag, id, rvQField.Interface()); err != nil {
-							return err
-						}
+					if refTag == "" {
+						return ErrEmptyRefTag
+					}
+					if err = h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
+						return err
 					}
 				}
 			}
@@ -128,6 +129,7 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	if e != nil {
 		return e
 	}
+
 	for _, typ := range typs {
 		_, err := h.state.bucket.Remove(typ+"::"+id, 0)
 		if err != nil {
@@ -136,7 +138,6 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	}
 	return nil
 }
-
 
 func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (string, error) {
 	if id == "" {
