@@ -15,7 +15,7 @@ import (
 )
 
 func TestWrite(t *testing.T) {
-	if _, _, err := testInsert(); err != nil {
+	if _, id, err := testInsert(); err != nil || id == "" {
 		t.Fatal(err)
 	}
 }
@@ -42,8 +42,8 @@ func TestWriteNullString(t *testing.T) {
 
 func TestWritePtrValue(t *testing.T) {
 	ws := generate()
-	_, err := th.Insert(context.Background(), "webshop", &ws)
-	if err != nil {
+	id, err := th.Insert(context.Background(), "webshop", &ws)
+	if err != nil || id == "" {
 		t.Fatal(err)
 	}
 }
@@ -53,8 +53,8 @@ func TestWritePrimitivePtr(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{Name: &asd}
-	_, err := th.Insert(context.Background(), "webshop", s)
-	if err != nil {
+	id, err := th.Insert(context.Background(), "webshop", s)
+	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
 }
@@ -63,8 +63,8 @@ func TestWritePrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
-	_, err := th.Insert(context.Background(), "webshop", s)
-	if err != nil {
+	id, err := th.Insert(context.Background(), "webshop", s)
+	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
 }
@@ -73,8 +73,8 @@ func TestWriteNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	_, err := th.Insert(context.Background(), "member", s)
-	if err != nil {
+	id, err := th.Insert(context.Background(), "member", s)
+	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
 }
@@ -106,16 +106,16 @@ func testInsert() (webshop, string, error) {
 }
 
 func TestRead(t *testing.T) {
-	_, id, err := testInsert()
+	wsInsert, id, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ws := webshop{}
-	if err := th.Get(context.Background(), "webshop", id, &ws); err != nil {
+	wsGet := webshop{}
+	if err := th.Get(context.Background(), "webshop", id, &wsGet); err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("%+v\n", ws)
+	assert.Equal(t, wsInsert, wsGet, "should be equal")
 }
 
 func TestReadNullString(t *testing.T) {
@@ -202,7 +202,7 @@ func TestReadNonPointerInput(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadNotExportedField(t *testing.T) {
+func TestReadNonExportedField(t *testing.T) {
 	a := "helder"
 	type wtyp struct {
 		job string
@@ -234,7 +234,11 @@ func TestPingNilService(t *testing.T) {
 	if err != nil {
 		t.Error("error", err)
 	}
-	fmt.Printf("%+v\n", *pingReport)
+	for _, service := range pingReport.Services {
+		assert.Equal(t, service.Success, true, "should be true")
+		fmt.Printf("%+v\n", service)
+
+	}
 }
 
 func TestPingAllService(t *testing.T) {
@@ -245,7 +249,15 @@ func TestPingAllService(t *testing.T) {
 	if err != nil {
 		t.Error("error", err)
 	}
-	fmt.Printf("%+v\n", pingReport)
+	for _, service := range pingReport.Services {
+		if service.Service == gocb.CbasService {
+			assert.Equal(t, service.Success, false, "should be false,service is missing")
+		} else {
+			assert.Equal(t, service.Success, true, "should be true")
+
+		}
+		fmt.Printf("%+v\n", service)
+	}
 }
 
 func TestTouch(t *testing.T) {
@@ -254,68 +266,27 @@ func TestTouch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ws := webshop{
-		Email: "",
-		Product: &product{
-			ID:          "",
-			UserID:      "",
-			StoreID:     "",
-			Name:        "",
-			Description: "",
-			Slug:        "",
-			Price:       0,
-			SalePrice:   0,
-			CurrencyID:  0,
-			OnSale:      0,
-			Status:      "",
-		},
-		Store: &store{
-			ID:          "",
-			UserID:      "",
-			Name:        "",
-			Description: "",
-		},
-	}
+	ws := webshop{}
 	if err := th.Touch(context.Background(), "webshop", ID, &ws, 10); err != nil {
 		t.Error("error", err)
 	}
 }
 
 func TestGetAndTouch(t *testing.T) {
-	_, ID, err := testInsert()
+	webshopInsert, ID, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ws := webshop{
-		Email: "",
-		Product: &product{
-			ID:          "",
-			UserID:      "",
-			StoreID:     "",
-			Name:        "",
-			Description: "",
-			Slug:        "",
-			Price:       0,
-			SalePrice:   0,
-			CurrencyID:  0,
-			OnSale:      0,
-			Status:      "",
-		},
-		Store: &store{
-			ID:          "",
-			UserID:      "",
-			Name:        "",
-			Description: "",
-		},
-	}
+	ws := webshop{}
 	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != nil {
 		t.Error("error", err)
 	}
+	assert.Equal(t, webshopInsert, ws, "should be equal")
 }
 
 func TestUpsertNewID(t *testing.T) {
-	if _, _, err := testUpsert(xid.New().String()); err != nil {
+	if _, id, err := testUpsert(xid.New().String()); err != nil || id == "" {
 		t.Fatal(err)
 	}
 }
@@ -332,8 +303,8 @@ func TestUpsertSameID(t *testing.T) {
 
 func TestUpsertPtrValueNewID(t *testing.T) {
 	ws := generate()
-	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), &ws, 0)
-	if err != nil {
+	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), &ws, 0)
+	if err != nil || id == "" {
 		t.Fatal(err)
 	}
 }
@@ -354,7 +325,7 @@ func TestUpsertPtrValueSameID(t *testing.T) {
 	if errGet != nil {
 		t.Fatal(errGet)
 	}
-	assert.ObjectsAreEqual(wsD, ws)
+	assert.Equal(t, wsD, ws, "should be equal")
 }
 
 func TestUpsertPrimitivePtr(t *testing.T) {
@@ -362,8 +333,8 @@ func TestUpsertPrimitivePtr(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{Name: &asd}
-	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
-	if err != nil {
+	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
 }
@@ -372,8 +343,8 @@ func TestUpsertPrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
-	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
-	if err != nil {
+	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
 }
@@ -382,8 +353,8 @@ func TestUpsertNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	_, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
-	if err != nil {
+	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
 }
@@ -404,27 +375,6 @@ func testUpsert(id string) (webshop, string, error) {
 	return ws, id, err
 }
 
-//func TestUpsert(t *testing.T) {
-//	ws, ID, err := testInsert()
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	updateableWs := *(&ws)
-//	updateableWs.Email = gofakeit.Email()
-//	updateableWs.Product.Name = gofakeit.Name()
-//
-//	if err := th.Upsert(ID, "webshop", updateableWs, 0); err != nil {
-//		t.Fatal(err)
-//	}
-//	if ws.Email == updateableWs.Email {
-//		t.Error("Update error at Email")
-//	}
-//	if ws.Product.Name == updateableWs.Product.Name {
-//		t.Error("Update error at Product's Name")
-//	}
-//
-//}
-
 func TestRemove(t *testing.T) {
 	_, ID, err := testInsert()
 	if err != nil {
@@ -432,6 +382,9 @@ func TestRemove(t *testing.T) {
 	}
 	if err := th.Remove(context.Background(), "webshop", ID, &webshop{}); err != nil {
 		t.Fatal(err)
+	}
+	if err := th.Get(context.Background(), "webshop", ID, &webshop{}); err != nil {
+		assert.Equal(t, gocb.ErrKeyNotFound, err, "error")
 	}
 }
 

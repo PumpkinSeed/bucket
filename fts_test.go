@@ -40,7 +40,6 @@ func TestConjuncts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	json.Marshal(cr)
 	crjso, err := json.Marshal(cr)
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +62,6 @@ func TestRangeQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	json.Marshal(rq)
 	rqjso, err := json.Marshal(rq)
 	if err != nil {
 		t.Fatal(err)

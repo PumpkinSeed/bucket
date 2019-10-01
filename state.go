@@ -21,8 +21,8 @@ type state struct {
 	sync.RWMutex
 	DocumentTypes map[string]string `json:"document_types"`
 
-	bucket        *gocb.Bucket   `json:"-"`
-	configuration *Configuration `json:"-"`
+	bucket        *gocb.Bucket
+	configuration *Configuration
 }
 
 func newState(c *Configuration) (*state, error) {

@@ -3,14 +3,15 @@ package odatas
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/couchbase/gocb"
-
 	"github.com/rs/xid"
-
-	"reflect"
 )
+
+type writerF func(string, string, interface{}, int) (gocb.Cas, error)
+type readerF func(string, string, interface{}, int) (gocb.Cas, error)
 
 func (h *Handler) Insert(ctx context.Context, typ string, q interface{}) (string, error) {
 	id, err := h.write(ctx, typ, xid.New().String(), q, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
@@ -23,7 +24,7 @@ func (h *Handler) Insert(ctx context.Context, typ string, q interface{}) (string
 	return id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f func(string, string, interface{}, int) (gocb.Cas, error)) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF) (string, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
@@ -83,8 +84,7 @@ func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) erro
 	return nil
 }
 
-func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl int, f func(string, string, interface{}, int) (gocb.Cas, error)) error {
-
+func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl int, f readerF) error {
 	_, err := f(typ, id, ptr, ttl)
 	if err != nil {
 		return err

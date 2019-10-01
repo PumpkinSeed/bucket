@@ -25,6 +25,7 @@ func defaultHandler() *Handler {
 		Password:       "password",
 		BucketName:     bucketName,
 		BucketPassword: "",
+		Separator:      "::",
 	})
 	if err != nil {
 		log.Fatal(err)
