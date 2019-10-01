@@ -21,7 +21,7 @@ func TestInsert(t *testing.T) {
 func TestInsertCustomID(t *testing.T) {
 	cID := xid.New().String() + "Faswwq123942390**12312_+"
 	ws := generate()
-	id, err := th.Insert(context.Background(), "webshop", cID, &ws)
+	id, err := th.Insert(context.Background(), "webshop", cID, &ws, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -30,7 +30,7 @@ func TestInsertCustomID(t *testing.T) {
 
 func TestInsertPtrValue(t *testing.T) {
 	ws := generate()
-	id, err := th.Insert(context.Background(), "webshop", "", &ws)
+	id, err := th.Insert(context.Background(), "webshop", "", &ws, 0)
 	if err != nil || id == "" {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestInsertPrimitivePtr(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{Name: &asd}
-	id, err := th.Insert(context.Background(), "webshop", "", s)
+	id, err := th.Insert(context.Background(), "webshop", "", s, 0)
 	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
@@ -51,7 +51,7 @@ func TestInsertPrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
-	id, err := th.Insert(context.Background(), "webshop", "", s)
+	id, err := th.Insert(context.Background(), "webshop", "", s, 0)
 	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
@@ -61,7 +61,7 @@ func TestInsertNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	id, err := th.Insert(context.Background(), "member", "", s)
+	id, err := th.Insert(context.Background(), "member", "", s, 0)
 	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
@@ -73,11 +73,11 @@ func TestInsertExpectDuplicateError(t *testing.T) {
 	}{name: "Jackson"}
 	ctx := context.Background()
 	id := xid.New().String()
-	_, err := th.Insert(ctx, "member", id, s)
+	_, err := th.Insert(ctx, "member", id, s, 0)
 	if err != nil {
 		t.Error("Missing error")
 	}
-	_, errDuplicateInsert := th.Insert(ctx, "member", id, s)
+	_, errDuplicateInsert := th.Insert(ctx, "member", id, s, 0)
 	if errDuplicateInsert == nil {
 		t.Error("error missing", errDuplicateInsert)
 	}
@@ -86,7 +86,7 @@ func TestInsertExpectDuplicateError(t *testing.T) {
 
 func testInsert() (webshop, string, error) {
 	ws := generate()
-	id, err := th.Insert(context.Background(), "webshop", "", ws)
+	id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
 	return ws, id, err
 }
 
@@ -109,7 +109,7 @@ func TestGetPrimitivePtrNil(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", test)
+	id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -127,7 +127,7 @@ func TestGetPrimitivePtr(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", test)
+	id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -146,7 +146,7 @@ func TestGetNonPointerInput(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", test)
+	id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -164,7 +164,7 @@ func TestGetNonExportedField(t *testing.T) {
 		job string
 	}
 	testInsert := wtyp{job: a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", testInsert)
+	id, errInsert := th.Insert(context.Background(), "webshop", "", testInsert, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -352,14 +352,14 @@ func BenchmarkInsertEmb(b *testing.B) {
 
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = th.Insert(context.Background(), "webshop", "", generate())
+		_, _ = th.Insert(context.Background(), "webshop", "", generate(), 0)
 	}
 }
 
 func BenchmarkGetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		ID, _ := th.Insert(context.Background(), "webshop", "", generate())
+		ID, _ := th.Insert(context.Background(), "webshop", "", generate(), 0)
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
 		_ = th.Get(context.Background(), "webshop", ID, webshop{})
@@ -386,7 +386,7 @@ func BenchmarkGetPtr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		job := jobtyp{Job: &j}
 		startInsert := time.Now()
-		id, _ := th.Insert(context.Background(), "job", "", job)
+		id, _ := th.Insert(context.Background(), "job", "", job, 0)
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		var jobRead jobtyp
 		start := time.Now()
