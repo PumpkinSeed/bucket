@@ -13,6 +13,7 @@ import (
 type writerF func(string, string, interface{}, int) (gocb.Cas, error)
 type readerF func(string, string, interface{}, int) (gocb.Cas, error)
 
+// Insert inserts new documents to the bucket.
 func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (string, error) {
 	if id == "" {
 		id = xid.New().String()
@@ -75,6 +76,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 	return id, err
 }
 
+// Get retrieves a document from the bucket
 func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
 	if err := h.read(ctx, typ, id, ptr, -1, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
@@ -123,6 +125,7 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 	return nil
 }
 
+// Remove removes a document from the bucket.
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
 	typs := []string{typ}
 	e := h.remove(ctx, typs, ptr, id)
@@ -180,6 +183,7 @@ func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id
 	return nil
 }
 
+// Upsert inserts or replaces documents in the bucket.
 func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (string, error) {
 	if id == "" {
 		id = xid.New().String()
@@ -195,6 +199,8 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 
 }
 
+// Touch touches documents, specifying a new expiry time for it.
+// The Cas value must be 0.
 func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl int) error {
 	types := []string{typ}
 	e := getDocumentTypes(ptr, types, id)
@@ -211,6 +217,7 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 	return nil
 }
 
+// GetAndTouch retrieves documents and simultaneously updates its expiry time.
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl int) error {
 	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
@@ -221,6 +228,7 @@ func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface
 	return nil
 }
 
+// Ping will ping a list of services and verify they are active
 func (h *Handler) Ping(ctx context.Context, services []gocb.ServiceType) (*gocb.PingReport, error) {
 	report, err := h.state.bucket.Ping(services)
 	if err != nil {

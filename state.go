@@ -13,6 +13,7 @@ const (
 	stateDocumentKey = "bucket_state"
 )
 
+// SetDocumentType adds document type to state
 func (h *Handler) SetDocumentType(ctx context.Context, name, prefix string) error {
 	return h.state.setType(name, prefix)
 }

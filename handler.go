@@ -9,6 +9,7 @@ import (
 	"github.com/couchbase/gocb"
 )
 
+// Handler is the main handler
 type Handler struct {
 	state *state
 
@@ -21,6 +22,7 @@ type Handler struct {
 	password string // temp field
 }
 
+// Config struct
 type Configuration struct {
 	Username         string `json:"username"`
 	Password         string `json:"password"`
@@ -30,6 +32,7 @@ type Configuration struct {
 	Separator        string `json:"separator"`
 }
 
+// New creates and returns  a new Handler containing configuration,state and client
 func New(c *Configuration) (*Handler, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -56,10 +59,12 @@ func New(c *Configuration) (*Handler, error) {
 	}, nil
 }
 
+// Manager returns a BucketManager for performing management operations on this bucket.
 func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }
 
+// ValidateState validates the state
 func (h *Handler) ValidateState() (bool, error) {
 	return h.state.validate()
 }

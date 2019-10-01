@@ -14,6 +14,7 @@ const (
 	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
+// Index creates secondary indexes for the interface v
 func (h *Handler) Index(ctx context.Context, v interface{}) error {
 	if err := h.GetManager(ctx).CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)
@@ -57,10 +58,10 @@ func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []st
 		if err == gocb.ErrIndexAlreadyExists {
 			_ = manager.DropIndex(indexName, true)
 			return makeIndex(manager, indexName, indexedFields)
-		} else {
-			log.Printf("Error when create secondary index %+v", err)
-			return err
 		}
+		log.Printf("Error when create secondary index %+v", err)
+		return err
+
 	}
 	return nil
 }
