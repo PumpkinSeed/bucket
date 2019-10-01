@@ -1,11 +1,11 @@
-package odatas
+package bucket
 
 import (
 	"context"
-	"fmt"
+	"reflect"
+
 	"github.com/couchbase/gocb"
 	"github.com/rs/xid"
-	"reflect"
 )
 
 type writerF func(string, string, interface{}, int) (gocb.Cas, error)
@@ -64,7 +64,6 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f); err != nil {
 						return id, err
 					}
-
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 						fields[removeOmitempty(tag)] = rvQField.Interface()
@@ -115,7 +114,6 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 					if err = h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
 						return err
 					}
-
 				}
 			}
 		}
@@ -127,7 +125,7 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
 	typs := []string{typ}
-	e := h.remove(ctx, typs, ptr, id)
+	e := getDocumentTypes(ptr, typs, id)
 	if e != nil {
 		return e
 	}
@@ -137,47 +135,6 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id string) error {
-	typ := reflect.TypeOf(ptr).Elem()
-	val := reflect.ValueOf(ptr).Elem()
-	if typ.Kind() != reflect.Struct {
-		return ErrFirstParameterNotStruct
-	}
-	for i := 0; i < typ.NumField(); i++ {
-		typeField := typ.Field(i)
-		structField := val.Field(i)
-
-		if !structField.CanSet() {
-			fmt.Println("field ", i, "cannot be set")
-			continue
-		}
-
-		structFieldKind := structField.Kind()
-		inputFieldName := typeField.Tag.Get("referenced")
-		if structFieldKind == reflect.Struct {
-			err := h.remove(ctx, typs, structField.Addr().Interface(), id)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		if inputFieldName == "" {
-			inputFieldName = typeField.Name
-
-			if structFieldKind == reflect.Struct {
-				err := h.remove(ctx, typs, structField.Addr().Interface(), id)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-		}
-		typs = append(typs, inputFieldName)
 	}
 	return nil
 }
