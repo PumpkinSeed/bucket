@@ -56,7 +56,7 @@ func TestInsertPtrValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(cas) != 3 {
-		t.Error("error")
+		t.Errorf("Cas should store 3 elements, instead of %d", len(cas))
 	}
 }
 
@@ -70,7 +70,7 @@ func TestInsertPrimitivePtr(t *testing.T) {
 		t.Error("Missing error")
 	}
 	if len(cas) != 1 {
-		t.Error("error")
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
@@ -83,7 +83,7 @@ func TestInsertPrimitivePtrNil(t *testing.T) {
 		t.Error("Missing error")
 	}
 	if len(cas) != 1 {
-		t.Error("error")
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
@@ -96,7 +96,7 @@ func TestInsertNonExportedField(t *testing.T) {
 		t.Error("Missing error")
 	}
 	if len(cas) != 1 {
-		t.Error("error")
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
@@ -326,7 +326,8 @@ func TestUpsertPtrValueNewID(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(cas) != 3 {
-		t.Error("error")
+		t.Errorf("Cas should store 3 element, instead of %d", len(cas))
+
 	}
 }
 
@@ -359,7 +360,8 @@ func TestUpsertPrimitivePtr(t *testing.T) {
 		t.Error("Missing error")
 	}
 	if len(cas) != 1 {
-		t.Error("error")
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
+
 	}
 }
 
@@ -372,7 +374,7 @@ func TestUpsertPrimitivePtrNil(t *testing.T) {
 		t.Error("Missing error")
 	}
 	if len(cas) != 1 {
-		t.Error("error")
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
@@ -385,7 +387,7 @@ func TestUpsertNonExportedField(t *testing.T) {
 		t.Error("Missing error")
 	}
 	if len(cas) != 1 {
-		t.Error("error")
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
