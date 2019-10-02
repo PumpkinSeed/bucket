@@ -48,7 +48,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 		for i := 0; i < rvQ.NumField(); i++ {
 			rvQField := rvQ.Field(i)
 			rtQField := rtQ.Field(i)
-			refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
+			refTag, hasRefTag := rtQField.Tag.Lookup(tagReferenced)
 
 			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasRefTag {
 				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
@@ -107,7 +107,7 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 				rvQField := rvQ.Field(i)
 				rtQField := rtQ.Field(i)
 				if rvQField.Kind() == reflect.Ptr {
-					refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
+					refTag, hasRefTag := rtQField.Tag.Lookup(tagReferenced)
 					if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
 						continue
 					}
