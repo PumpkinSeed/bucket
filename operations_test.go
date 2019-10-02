@@ -129,6 +129,21 @@ func TestInsertExpectDuplicateError(t *testing.T) {
 	assert.EqualValues(t, "key already exists, if a cas was provided the key exists with a different cas", errDuplicateInsert.Error(), "wrong error msg")
 }
 
+func TestInsertEmptyRefTag(t *testing.T) {
+	ws := generate()
+	s := struct {
+		Name    string   `json:"name"`
+		Product *product `json:"product" cb_referenced:""`
+	}{
+		Name:    "Missing",
+		Product: ws.Product,
+	}
+	_, _, err := th.Insert(context.Background(), "name", "", s, 0)
+	if err != ErrEmptyRefTag {
+		t.Errorf("Error should be %s instead of %s", ErrEmptyRefTag, err)
+	}
+}
+
 func testInsert() (webshop, string, error) {
 	ws := generate()
 	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
