@@ -1,10 +1,8 @@
-package odatas
+package bucket
 
 import (
 	"context"
-	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/couchbase/gocb"
 	"github.com/rs/xid"
@@ -12,23 +10,25 @@ import (
 
 type writerF func(string, string, interface{}, int) (gocb.Cas, error)
 type readerF func(string, string, interface{}, int) (gocb.Cas, error)
+type Cas map[string]gocb.Cas
 
 // Insert inserts new documents to the bucket.
-func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (string, error) {
+func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (Cas, string, error) {
+	cas := make(map[string]gocb.Cas)
 	if id == "" {
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
 		return h.state.bucket.Insert(documentID, ptr, 0)
-	})
+	}, cas)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	return id, nil
+	return cas, id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, cas Cas) (string, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
@@ -49,8 +49,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 		for i := 0; i < rvQ.NumField(); i++ {
 			rvQField := rvQ.Field(i)
 			rtQField := rtQ.Field(i)
+			refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
 
-			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() {
+			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasRefTag {
 				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
 					fields[removeOmitempty(tag)] = nil
 				}
@@ -58,11 +59,13 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 				if rvQField.Kind() == reflect.Ptr {
 					rvQField = reflect.Indirect(rvQField)
 				}
-				if rvQField.Kind() == reflect.Struct {
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if _, err := h.write(ctx, removeOmitempty(tag), id, rvQField.Interface(), f); err != nil {
-							return id, err
-						}
+
+				if rvQField.Kind() == reflect.Struct && hasRefTag {
+					if refTag == "" {
+						return "", ErrEmptyRefTag
+					}
+					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f, cas); err != nil {
+						return id, err
 					}
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
@@ -72,7 +75,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 			}
 		}
 	}
-	_, err := f(typ, id, fields, -1)
+	c, err := f(typ, id, fields, -1)
+	cas[typ] = c
+
 	return id, err
 }
 
@@ -104,17 +109,16 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 				rvQField := rvQ.Field(i)
 				rtQField := rtQ.Field(i)
 				if rvQField.Kind() == reflect.Ptr {
-					if rvQField.Type().Elem().Kind() != reflect.Struct {
+					refTag, hasRefTag := rtQField.Tag.Lookup("referenced")
+					if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
 						continue
 					}
 					rvQField.Set(reflect.New(rvQField.Type().Elem()))
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
-						if strings.Contains(tag, ",omitempty") {
-							tag = strings.Replace(tag, ",omitempty", "", -1)
-						}
-						if err = h.Get(ctx, tag, id, rvQField.Interface()); err != nil {
-							return err
-						}
+					if refTag == "" {
+						return ErrEmptyRefTag
+					}
+					if err = h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
+						return err
 					}
 				}
 			}
@@ -128,7 +132,7 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 // Remove removes a document from the bucket.
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
 	typs := []string{typ}
-	e := h.remove(ctx, typs, ptr, id)
+	e := getDocumentTypes(ptr, typs, id)
 	if e != nil {
 		return e
 	}
@@ -142,60 +146,19 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	return nil
 }
 
-func (h *Handler) remove(ctx context.Context, typs []string, ptr interface{}, id string) error {
-	typ := reflect.TypeOf(ptr).Elem()
-	val := reflect.ValueOf(ptr).Elem()
-	if typ.Kind() != reflect.Struct {
-		return ErrFirstParameterNotStruct
-	}
-	for i := 0; i < typ.NumField(); i++ {
-		typeField := typ.Field(i)
-		structField := val.Field(i)
-
-		if !structField.CanSet() {
-			fmt.Println("field ", i, "cannot be set")
-			continue
-		}
-
-		structFieldKind := structField.Kind()
-		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
-		if structFieldKind == reflect.Struct {
-			err := h.remove(ctx, typs, structField.Addr().Interface(), id)
-			if err != nil {
-				return err
-			}
-			continue
-		}
-
-		if inputFieldName == "" {
-			inputFieldName = typeField.Name
-
-			if structFieldKind == reflect.Struct {
-				err := h.remove(ctx, typs, structField.Addr().Interface(), id)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-		}
-		typs = append(typs, inputFieldName)
-	}
-	return nil
-}
-
-// Upsert inserts or replaces documents in the bucket.
-func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (string, error) {
+func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
+	cas := make(map[string]gocb.Cas)
 	if id == "" {
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
 		return h.state.bucket.Upsert(documentID, q, uint32(ttl))
-	})
+	}, cas)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	return id, nil
+	return cas, id, nil
 
 }
 

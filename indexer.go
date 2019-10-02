@@ -1,4 +1,4 @@
-package odatas
+package bucket
 
 import (
 	"context"
@@ -56,12 +56,18 @@ func goDeep(t reflect.Type, indexables map[string][]string) {
 func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []string) error {
 	if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
 		if err == gocb.ErrIndexAlreadyExists {
-			_ = manager.DropIndex(indexName, true)
-			return makeIndex(manager, indexName, indexedFields)
+			if err := manager.DropIndex(indexName, true); err != nil {
+				log.Printf("Error when dropping index[%s] %+v", indexName, err)
+				return err
+			}
+			if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
+				log.Printf("Error when create secondary index %+v", err)
+				return err
+			}
+		} else {
+			log.Printf("Error when create secondary index %+v", err)
+			return err
 		}
-		log.Printf("Error when create secondary index %+v", err)
-		return err
-
 	}
 	return nil
 }

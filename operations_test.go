@@ -1,83 +1,116 @@
-package odatas
+package bucket
 
 import (
 	"context"
 	"fmt"
+	"github.com/rs/xid"
+	"github.com/volatiletech/null"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/couchbase/gocb"
-	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWrite(t *testing.T) {
+func TestInsert(t *testing.T) {
 	if _, id, err := testInsert(); err != nil || id == "" {
 		t.Fatal(err)
 	}
 }
 
-func TestWriteCustomID(t *testing.T) {
+func TestInsertNullString(t *testing.T) {
+	type nullStrTest struct {
+		Bin         int         `json:"bin"`
+		CardBrand   string      `json:"card_brand"`
+		IssuingBank string      `json:"issuing_bank"`
+		CardType    null.String `json:"card_type"`
+	}
+	cardTypeWrite := nullStrTest{
+		Bin:         50003,
+		CardBrand:   "VISA",
+		IssuingBank: "",
+		CardType:    null.String{String: "US", Valid: true},
+	}
+	_, _, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestInsertCustomID(t *testing.T) {
 	cID := xid.New().String() + "Faswwq123942390**12312_+"
 	ws := generate()
-	id, err := th.Insert(context.Background(), "webshop", cID, &ws)
+	_, id, err := th.Insert(context.Background(), "webshop", cID, &ws)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.Equal(t, cID, id, "should be equal")
 }
 
-func TestWritePtrValue(t *testing.T) {
+func TestInsertPtrValue(t *testing.T) {
 	ws := generate()
-	id, err := th.Insert(context.Background(), "webshop", "", &ws)
+	cas, id, err := th.Insert(context.Background(), "webshop", "", &ws)
 	if err != nil || id == "" {
 		t.Fatal(err)
 	}
+	if len(cas) != 3 {
+		t.Errorf("Cas should store 3 elements, instead of %d", len(cas))
+	}
 }
 
-func TestWritePrimitivePtr(t *testing.T) {
+func TestInsertPrimitivePtr(t *testing.T) {
 	asd := "asd"
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{Name: &asd}
-	id, err := th.Insert(context.Background(), "webshop", "", s)
+	cas, id, err := th.Insert(context.Background(), "webshop", "", s)
 	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
+	if len(cas) != 1 {
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
+	}
 }
 
-func TestWritePrimitivePtrNil(t *testing.T) {
+func TestInsertPrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
-	id, err := th.Insert(context.Background(), "webshop", "", s)
+	cas, id, err := th.Insert(context.Background(), "webshop", "", s)
 	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
+	if len(cas) != 1 {
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
+	}
 }
 
-func TestWriteNonExportedField(t *testing.T) {
+func TestInsertNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	id, err := th.Insert(context.Background(), "member", "", s)
+	cas, id, err := th.Insert(context.Background(), "member", "", s)
 	if err != nil || id == "" {
 		t.Error("Missing error")
 	}
+	if len(cas) != 1 {
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
+	}
 }
 
-func TestWriteExpectDuplicateError(t *testing.T) {
+func TestInsertExpectDuplicateError(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
 	ctx := context.Background()
 	id := xid.New().String()
-	_, err := th.Insert(ctx, "member", id, s)
+	_, _, err := th.Insert(ctx, "member", id, s)
 	if err != nil {
 		t.Error("Missing error")
 	}
-	_, errDuplicateInsert := th.Insert(ctx, "member", id, s)
+	_, _, errDuplicateInsert := th.Insert(ctx, "member", id, s)
 	if errDuplicateInsert == nil {
 		t.Error("error missing", errDuplicateInsert)
 	}
@@ -86,11 +119,11 @@ func TestWriteExpectDuplicateError(t *testing.T) {
 
 func testInsert() (webshop, string, error) {
 	ws := generate()
-	id, err := th.Insert(context.Background(), "webshop", "", ws)
+	_, id, err := th.Insert(context.Background(), "webshop", "", ws)
 	return ws, id, err
 }
 
-func TestRead(t *testing.T) {
+func TestGet(t *testing.T) {
 	wsInsert, id, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
@@ -103,13 +136,42 @@ func TestRead(t *testing.T) {
 	assert.Equal(t, wsInsert, wsGet, "should be equal")
 }
 
-func TestReadPrimitivePtrNil(t *testing.T) {
+func TestGetNullString(t *testing.T) {
+	type nullStrTest struct {
+		Bin         int         `json:"bin"`
+		CardBrand   string      `json:"card_brand"`
+		IssuingBank string      `json:"issuing_bank"`
+		CardType    null.String `json:"card_type"`
+	}
+	cardTypeWrite := nullStrTest{
+		Bin:         50003,
+		CardBrand:   "VISA",
+		IssuingBank: "",
+		CardType:    null.String{String: "US", Valid: true},
+	}
+	_, id, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite)
+	if err != nil {
+		t.Error(err)
+	}
+	cardTypeRead := nullStrTest{
+		Bin:         0,
+		CardBrand:   "",
+		IssuingBank: "",
+		CardType:    null.String{},
+	}
+	if err := th.Get(context.Background(), "card_type", id, &cardTypeRead); err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, cardTypeWrite, cardTypeRead, "should be equal")
+}
+
+func TestGetPrimitivePtrNil(t *testing.T) {
 	a := "a"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", test)
+	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -121,13 +183,13 @@ func TestReadPrimitivePtrNil(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadPrimitivePtr(t *testing.T) {
+func TestGetPrimitivePtr(t *testing.T) {
 	a := "a"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", test)
+	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -140,13 +202,13 @@ func TestReadPrimitivePtr(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadNonPointerInput(t *testing.T) {
+func TestGetNonPointerInput(t *testing.T) {
 	a := "a"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", test)
+	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -158,13 +220,13 @@ func TestReadNonPointerInput(t *testing.T) {
 	assert.Equal(t, test, testGet, "They should be equal")
 }
 
-func TestReadNonExportedField(t *testing.T) {
+func TestGetNonExportedField(t *testing.T) {
 	a := "helder"
 	type wtyp struct {
 		job string
 	}
 	testInsert := wtyp{job: a}
-	id, errInsert := th.Insert(context.Background(), "webshop", "", testInsert)
+	_, id, errInsert := th.Insert(context.Background(), "webshop", "", testInsert)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -177,7 +239,7 @@ func TestReadNonExportedField(t *testing.T) {
 
 }
 
-func TestIDNotFoundError(t *testing.T) {
+func TestGetIDNotFoundError(t *testing.T) {
 	id := "123"
 	ws := webshop{}
 	if err := th.Get(context.Background(), "webshop", id, &ws); err == nil {
@@ -259,21 +321,25 @@ func TestUpsertSameID(t *testing.T) {
 
 func TestUpsertPtrValueNewID(t *testing.T) {
 	ws := generate()
-	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), &ws, 0)
+	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), &ws, 0)
 	if err != nil || id == "" {
 		t.Fatal(err)
+	}
+	if len(cas) != 3 {
+		t.Errorf("Cas should store 3 element, instead of %d", len(cas))
+
 	}
 }
 
 func TestUpsertPtrValueSameID(t *testing.T) {
 	ws := generate()
 	id := xid.New().String()
-	_, err := th.Upsert(context.Background(), "webshop", id, &ws, 0)
+	_, _, err := th.Upsert(context.Background(), "webshop", id, &ws, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wsD := generate()
-	_, errD := th.Upsert(context.Background(), "webshop", id, &wsD, 1)
+	_, _, errD := th.Upsert(context.Background(), "webshop", id, &wsD, 1)
 	if errD != nil {
 		t.Fatal(errD)
 	}
@@ -289,9 +355,13 @@ func TestUpsertPrimitivePtr(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{Name: &asd}
-	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
 	if err != nil || id == "" {
 		t.Error("Missing error")
+	}
+	if len(cas) != 1 {
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
+
 	}
 }
 
@@ -299,9 +369,12 @@ func TestUpsertPrimitivePtrNil(t *testing.T) {
 	s := struct {
 		Name *string `json:"name,omitempty"`
 	}{}
-	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
 	if err != nil || id == "" {
 		t.Error("Missing error")
+	}
+	if len(cas) != 1 {
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
@@ -309,9 +382,12 @@ func TestUpsertNonExportedField(t *testing.T) {
 	s := struct {
 		name string
 	}{name: "Jackson"}
-	id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
+	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
 	if err != nil || id == "" {
 		t.Error("Missing error")
+	}
+	if len(cas) != 1 {
+		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
 	}
 }
 
@@ -327,7 +403,7 @@ func TestUpsertEmptyID(t *testing.T) {
 
 func testUpsert(id string) (webshop, string, error) {
 	ws := generate()
-	id, err := th.Upsert(context.Background(), "webshop", id, ws, 0)
+	_, id, err := th.Upsert(context.Background(), "webshop", id, ws, 0)
 	return ws, id, err
 }
 
@@ -352,14 +428,14 @@ func BenchmarkInsertEmb(b *testing.B) {
 
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _ = th.Insert(context.Background(), "webshop", "", generate())
+		_, _, _ = th.Insert(context.Background(), "webshop", "", generate())
 	}
 }
 
 func BenchmarkGetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		ID, _ := th.Insert(context.Background(), "webshop", "", generate())
+		_, ID, _ := th.Insert(context.Background(), "webshop", "", generate())
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
 		_ = th.Get(context.Background(), "webshop", ID, webshop{})
@@ -386,7 +462,7 @@ func BenchmarkGetPtr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		job := jobtyp{Job: &j}
 		startInsert := time.Now()
-		id, _ := th.Insert(context.Background(), "job", "", job)
+		_, id, _ := th.Insert(context.Background(), "job", "", job)
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		var jobRead jobtyp
 		start := time.Now()

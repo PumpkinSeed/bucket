@@ -1,4 +1,4 @@
-package odatas
+package bucket
 
 import "errors"
 
@@ -20,6 +20,7 @@ var (
 
 	// Source name must be filled
 	ErrEmptySource = errors.New("source name must set")
+	ErrEmptyRefTag = errors.New("referenced tag must set")
 
 	// Conjunktion and disjunction are nil
 	ErrConjunctionAndDisjunktionIsNil = errors.New("conjunction and disjunction are nil")
