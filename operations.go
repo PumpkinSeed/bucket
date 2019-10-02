@@ -141,8 +141,11 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	}
 
 	for _, typ := range typs {
-		_, err := h.state.bucket.Remove(typ+"::"+id, 0)
+		documentID, err := h.state.getDocumentID(id, typ)
 		if err != nil {
+			return err
+		}
+		if _, err := h.state.bucket.Remove(documentID, 0); err != nil {
 			return err
 		}
 	}
@@ -176,8 +179,11 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 	}
 
 	for _, typ := range types {
-		_, err := h.state.bucket.Touch(typ+"::"+id, 0, ttl)
+		documentID, err := h.state.getDocumentID(id, typ)
 		if err != nil {
+			return err
+		}
+		if _, err := h.state.bucket.Touch(documentID, 0, ttl); err != nil {
 			return err
 		}
 	}
