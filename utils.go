@@ -44,7 +44,7 @@ func getDocumentTypes(ptr interface{}, typs []string, id string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
 	if typ.Kind() != reflect.Struct {
-		return errors.New("second argument must be a struct")
+		return errors.New("first argument must be a struct")
 	}
 	for i := 0; i < typ.NumField(); i++ {
 		typeField := typ.Field(i)

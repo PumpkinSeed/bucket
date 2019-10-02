@@ -14,6 +14,7 @@ const (
 	//TagReferenced = "referenced" // referenced tag represents external id-s
 )
 
+//Index runs trough the given struct and indexes all fields with indexable="true" tags
 func (h *Handler) Index(ctx context.Context, v interface{}) error {
 	if err := h.GetManager(ctx).CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)

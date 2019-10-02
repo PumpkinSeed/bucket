@@ -30,6 +30,7 @@ type Configuration struct {
 	Separator        string `json:"separator"`
 }
 
+// New creates a new handler from the configuration that handles the operations
 func New(c *Configuration) (*Handler, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -56,10 +57,12 @@ func New(c *Configuration) (*Handler, error) {
 	}, nil
 }
 
+//GetManager returns a BucketManager for performing management operations on this bucket
 func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }
 
+// ValidateState validates the state of the bucket
 func (h *Handler) ValidateState() (bool, error) {
 	return h.state.validate()
 }
