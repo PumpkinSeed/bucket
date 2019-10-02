@@ -128,8 +128,8 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 }
 
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
-	typs := []string{typ}
-	e := getDocumentTypes(ptr, typs)
+	//typs := []string{typ}
+	typs, e := getDocumentTypes(ptr)
 	if e != nil {
 		return e
 	}
@@ -160,13 +160,13 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 }
 
 func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
-	types := []string{typ}
-	e := getDocumentTypes(ptr, types)
+	// types := []string{typ}
+	typs, e := getDocumentTypes(ptr)
 	if e != nil {
 		return e
 	}
 
-	for _, typ := range types {
+	for _, typ := range typs {
 		_, err := h.state.bucket.Touch(typ+"::"+id, 0, ttl)
 		if err != nil {
 			return err

@@ -20,4 +20,5 @@ var (
 	ErrInputStructPointer      = errors.New("input struct must be pointer")
 
 	ErrInvalidBulkContainer = errors.New("container must be *[]T, with length of ids array")
+	ErrInvalidGetDocumentTypesParam = errors.New("internal error: value should be pointer for getDocumentTypes")
 )

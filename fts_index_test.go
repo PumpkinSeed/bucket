@@ -5,7 +5,7 @@ import (
 )
 
 func TestCreateFullTextSearchIndex(t *testing.T) {
-	if err := createFullTextSearchIndex("order_fts_idx"); err != nil {
+	if err := createFullTextSearchIndex("order_fts_idx", true); err != nil {
 		t.Fatal(err)
 	}
 }

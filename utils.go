@@ -3,7 +3,6 @@ package bucket
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -67,39 +66,50 @@ func removeOmitempty(tag string) string {
 	return tag
 }
 
-func getDocumentTypes(ptr interface{}, typs []string) error {
-	typ := reflect.TypeOf(ptr).Elem()
-	val := reflect.ValueOf(ptr).Elem()
+func getDocumentTypes(value interface{}) ([]string, error) {
+	if reflect.ValueOf(value).Kind() != reflect.Ptr {
+		return nil, ErrInvalidGetDocumentTypesParam
+	}
+
+	var typs []string
+	var val = reflect.New(reflect.ValueOf(value).Type().Elem())
+	if val.Kind() == reflect.Ptr {
+		val = reflect.Indirect(val)
+	}
+	typ := val.Type()
 	if typ.Kind() != reflect.Struct {
-		return errors.New("second argument must be a struct")
+		return nil, errors.New("value argument must be a struct")
 	}
 	for i := 0; i < typ.NumField(); i++ {
 		typeField := typ.Field(i)
 		structField := val.Field(i)
-		if !structField.CanSet() {
-			fmt.Println("field ", i, "cannot be set")
-			continue
-		}
-		structFieldKind := structField.Kind()
-		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
-		if structFieldKind == reflect.Struct {
-			err := getDocumentTypes(structField.Addr().Interface(), typs)
+		if val, ok := typeField.Tag.Lookup(tagReferenced); ok {
+			typs = append(typs, val)
+			if structField.IsNil() && structField.CanSet() {
+				structField.Set(reflect.New(structField.Type().Elem()))
+			}
+			moreTypes, err := getDocumentTypes(structField.Interface())
 			if err != nil {
-				return err
+				return nil, err
 			}
-			continue
+			typs = append(typs, moreTypes...)
 		}
-		if inputFieldName == "" {
-			inputFieldName = typeField.Name
-			if structFieldKind == reflect.Struct {
-				err := getDocumentTypes(structField.Addr().Interface(), typs)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-		}
-		typs = append(typs, inputFieldName)
 	}
-	return nil
+	return typs, nil
+}
+
+func getStructAddressableSubfields(value reflect.Value) map[string]interface{} {
+	if value.Kind() == reflect.Ptr {
+		value = reflect.Indirect(value)
+	}
+
+	var result = make(map[string]interface{})
+	typ := value.Type()
+	for i := 0; i < typ.NumField(); i++ {
+		if tag, ok := typ.Field(i).Tag.Lookup(tagReferenced); ok && tag != "" {
+			result[tag] = value.Field(i).Addr().Interface()
+		}
+	}
+
+	return result
 }

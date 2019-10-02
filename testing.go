@@ -167,26 +167,29 @@ func generate() webshop {
 	}
 }
 
-func createFullTextSearchIndex(indexName string) error {
-	if ok, _, _ := th.InspectFullTextSearchIndex(context.Background(), indexName); ok {
+func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
+	var ok bool
+	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
 		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
 		if err != nil {
 			return err
 		}
 	}
 
-	def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
-		Name:                 indexName,
-		SourceType:           "couchbase",
-		SourceName:           "company",
-		DocIDPrefixDelimiter: "::",
-	})
-	if err != nil {
-		return err
-	}
-	err = th.CreateFullTextSearchIndex(context.Background(), def)
-	if err != nil {
-		return err
+	if !ok {
+		def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+			Name:                 indexName,
+			SourceType:           "couchbase",
+			SourceName:           "company",
+			DocIDPrefixDelimiter: "::",
+		})
+		if err != nil {
+			return err
+		}
+		err = th.CreateFullTextSearchIndex(context.Background(), def)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

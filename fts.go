@@ -182,10 +182,10 @@ func (h *Handler) doSearch(ctx context.Context, query *gocb.SearchQuery) (gocb.S
 		}
 		return gocb.SearchResultStatus{}, nil, nil, err
 	}
-	fmt.Printf("%+v\n", res.Status())
-	for i, v := range res.Hits() {
-		fmt.Printf("%d ---- %+v\n", i, v)
-	}
+	//fmt.Printf("%+v\n", res.Status())
+	//for i, v := range res.Hits() {
+	//	fmt.Printf("%d ---- %+v\n", i, v)
+	//}
 
 	return res.Status(), res.Hits(), res.Facets(), nil
 }
