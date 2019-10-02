@@ -3,12 +3,13 @@ package bucket
 import (
 	"context"
 	"fmt"
+	"github.com/rs/xid"
+	"github.com/volatiletech/null"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/couchbase/gocb"
-	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +17,26 @@ func TestInsert(t *testing.T) {
 	if _, id, err := testInsert(); err != nil || id == "" {
 		t.Fatal(err)
 	}
+}
+
+func TestInsertNullString(t *testing.T) {
+	type nullStrTest struct {
+		Bin         int         `json:"bin"`
+		CardBrand   string      `json:"card_brand"`
+		IssuingBank string      `json:"issuing_bank"`
+		CardType    null.String `json:"card_type"`
+	}
+	cardTypeWrite := nullStrTest{
+		Bin:         50003,
+		CardBrand:   "VISA",
+		IssuingBank: "",
+		CardType:    null.String{String: "US", Valid: true},
+	}
+	_, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
 }
 
 func TestInsertCustomID(t *testing.T) {
@@ -101,6 +122,35 @@ func TestGet(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Equal(t, wsInsert, wsGet, "should be equal")
+}
+
+func TestGetNullString(t *testing.T) {
+	type nullStrTest struct {
+		Bin         int         `json:"bin"`
+		CardBrand   string      `json:"card_brand"`
+		IssuingBank string      `json:"issuing_bank"`
+		CardType    null.String `json:"card_type"`
+	}
+	cardTypeWrite := nullStrTest{
+		Bin:         50003,
+		CardBrand:   "VISA",
+		IssuingBank: "",
+		CardType:    null.String{String: "US", Valid: true},
+	}
+	id, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	cardTypeRead := nullStrTest{
+		Bin:         0,
+		CardBrand:   "",
+		IssuingBank: "",
+		CardType:    null.String{},
+	}
+	if err := th.Get(context.Background(), "card_type", id, &cardTypeRead); err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, cardTypeWrite, cardTypeRead, "should be equal")
 }
 
 func TestGetPrimitivePtrNil(t *testing.T) {
