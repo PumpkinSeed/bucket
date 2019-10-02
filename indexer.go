@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	tagJson      = "json"
-	tagIndexable = "indexable"
-	//TagReferenced = "referenced" // referenced tag represents external id-s
+	tagJson       = "json"
+	tagIndexable  = "cb_indexable"
+	tagReferenced = "cb_referenced" // referenced tag represents external types for id-s
 )
 
 // Index creates secondary indexes for the interface v
