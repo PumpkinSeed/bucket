@@ -192,5 +192,8 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 		}
 	}
 
+	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
+	time.Sleep(1 * time.Second)
+
 	return nil
 }
