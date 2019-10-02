@@ -10,6 +10,7 @@ var (
 	ErrEmptyIndex  = errors.New("index must be filled")
 	ErrEmptyType   = errors.New("source type must set")
 	ErrEmptySource = errors.New("source name must set")
+	ErrEmptyRefTag = errors.New("referenced tag must set")
 
 	ErrConjunctionAndDisjunktionIsNil = errors.New("conjunction and disjunction are nil")
 
