@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/rs/xid"
@@ -35,5 +34,5 @@ func TestGetBulk(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println(ws)
+	//fmt.Println(ws[0].Product)
 }

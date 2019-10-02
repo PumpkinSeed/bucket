@@ -38,7 +38,7 @@ func TestGetStructAddressableSubfields(t *testing.T) {
 	result["store"] = &s
 	if v, ok := result["store"].(*store); ok {
 		if v.Name != "test" {
-			t.Error("Name should be 'test', instead of %s", v.Name)
+			t.Errorf("Name should be 'test', instead of %s", v.Name)
 		}
 	}
 }

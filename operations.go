@@ -18,7 +18,10 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID := typ + "::" + id
+		documentID, err := h.state.getDocumentKey(typ, id)
+		if err != nil {
+			return 0, err
+		}
 		return h.state.bucket.Insert(documentID, ptr, ttl)
 	}, ttl, cas)
 	if err != nil {
@@ -82,7 +85,10 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 
 func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
 	if err := h.read(ctx, typ, id, ptr, 0, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID := typ + "::" + id
+		documentID, err := h.state.getDocumentKey(typ, id)
+		if err != nil {
+			return 0, err
+		}
 		return h.state.bucket.Get(documentID, ptr)
 	}); err != nil {
 		return err
@@ -135,8 +141,11 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	}
 
 	for _, typ := range typs {
-		_, err := h.state.bucket.Remove(typ+"::"+id, 0)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
+			return err
+		}
+		if _, err := h.state.bucket.Remove(documentID, 0); err != nil {
 			return err
 		}
 	}
@@ -149,7 +158,10 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID := typ + "::" + id
+		documentID, err := h.state.getDocumentKey(typ, id)
+		if err != nil {
+			return 0, err
+		}
 		return h.state.bucket.Upsert(documentID, q, ttl)
 	}, ttl, cas)
 	if err != nil {
@@ -167,8 +179,11 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 	}
 
 	for _, typ := range typs {
-		_, err := h.state.bucket.Touch(typ+"::"+id, 0, ttl)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
+			return err
+		}
+		if _, err := h.state.bucket.Touch(documentID, 0, ttl); err != nil {
 			return err
 		}
 	}
@@ -177,8 +192,11 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID := typ + "::" + id
-		return h.state.bucket.GetAndTouch(documentID, ttl, ptr)
+		documentID, err := h.state.getDocumentKey(typ, id)
+		if err != nil {
+			return 0, err
+		}
+		return h.state.bucket.GetAndTouch(documentID, uint32(ttl), ptr)
 	}); err != nil {
 		return err
 	}

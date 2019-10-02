@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/couchbase/gocb"
@@ -26,12 +25,16 @@ func (h *Handler) GetBulk(ctx context.Context, hits []gocb.SearchResultHit, cont
 			if err != nil {
 				return err
 			}
-			fmt.Println(typs)
-			//identifier := h.state.fetchDocumentIdentifier(hits[i].Id)
 			items = append(items, &gocb.GetOp{Key: hits[i].Id, Value: rvElem.Index(i).Addr().Interface()})
-			//for _, typ := range typs {
-			//	items = append(items, &gocb.GetOp{Key: })
-			//}
+			identifier := h.state.fetchDocumentIdentifier(hits[i].Id)
+			addressableFields := getStructAddressableSubfields(rvElem.Index(i).Addr())
+			for _, typ := range typs {
+				documentKey, err := h.state.getDocumentKey(typ, identifier)
+				if err != nil {
+					return err
+				}
+				items = append(items, &gocb.GetOp{Key: documentKey, Value: addressableFields[typ]})
+			}
 		}
 	default:
 		return ErrInvalidBulkContainer
