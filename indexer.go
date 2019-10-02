@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	tagJson      = "json"
-	tagIndexable = "indexable"
-	//TagReferenced = "referenced" // referenced tag represents external id-s
+	tagJson       = "json"
+	tagIndexable  = "cb_indexable"
+	tagReferenced = "cb_referenced" // referenced tag represents external types for id-s
 )
 
 func (h *Handler) Index(ctx context.Context, v interface{}) error {
