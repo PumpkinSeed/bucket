@@ -10,22 +10,24 @@ import (
 
 type writerF func(string, string, interface{}, int) (gocb.Cas, error)
 type readerF func(string, string, interface{}, int) (gocb.Cas, error)
+type Cas map[string]gocb.Cas
 
-func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (string, error) {
+func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (Cas, string, error) {
+	cas := make(map[string]gocb.Cas)
 	if id == "" {
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
 		return h.state.bucket.Insert(documentID, ptr, 0)
-	})
+	}, cas)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	return id, nil
+	return cas, id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, cas Cas) (string, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
@@ -61,7 +63,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 					if refTag == "" {
 						return "", ErrEmptyRefTag
 					}
-					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f); err != nil {
+					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f, cas); err != nil {
 						return id, err
 					}
 				} else {
@@ -72,7 +74,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 			}
 		}
 	}
-	_, err := f(typ, id, fields, -1)
+	c, err := f(typ, id, fields, -1)
+	cas[typ] = c
+
 	return id, err
 }
 
@@ -139,18 +143,19 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	return nil
 }
 
-func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (string, error) {
+func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
+	cas := make(map[string]gocb.Cas)
 	if id == "" {
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl int) (gocb.Cas, error) {
 		documentID := typ + "::" + id
 		return h.state.bucket.Upsert(documentID, q, uint32(ttl))
-	})
+	}, cas)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	return id, nil
+	return cas, id, nil
 
 }
 
