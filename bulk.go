@@ -21,6 +21,12 @@ func (h *Handler) GetBulk(ctx context.Context, hits []gocb.SearchResultHit, cont
 			return ErrInvalidBulkContainer
 		}
 		for i := 0; i < rvElem.Len(); i++ {
+			//var typs []string
+			//err := getDocumentTypes(rvElem.Index(i).Interface(), typs)
+			//if err != nil {
+			//	return err
+			//}
+			//fmt.Println(typs)
 			items = append(items, &gocb.GetOp{Key: hits[i].Id, Value: rvElem.Index(i).Addr().Interface()})
 		}
 	default:

@@ -67,7 +67,7 @@ func removeOmitempty(tag string) string {
 	return tag
 }
 
-func getDocumentTypes(ptr interface{}, typs []string, id string) error {
+func getDocumentTypes(ptr interface{}, typs []string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
 	if typ.Kind() != reflect.Struct {
@@ -83,7 +83,7 @@ func getDocumentTypes(ptr interface{}, typs []string, id string) error {
 		structFieldKind := structField.Kind()
 		inputFieldName := strings.Split(typeField.Tag.Get("json"), ",")[0]
 		if structFieldKind == reflect.Struct {
-			err := getDocumentTypes(structField.Addr().Interface(), typs, id)
+			err := getDocumentTypes(structField.Addr().Interface(), typs)
 			if err != nil {
 				return err
 			}
@@ -92,7 +92,7 @@ func getDocumentTypes(ptr interface{}, typs []string, id string) error {
 		if inputFieldName == "" {
 			inputFieldName = typeField.Name
 			if structFieldKind == reflect.Struct {
-				err := getDocumentTypes(structField.Addr().Interface(), typs, id)
+				err := getDocumentTypes(structField.Addr().Interface(), typs)
 				if err != nil {
 					return err
 				}

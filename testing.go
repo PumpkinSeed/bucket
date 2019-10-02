@@ -31,6 +31,7 @@ func seed() {
 	th.SetDocumentType(context.Background(), "order", "order")
 	th.SetDocumentType(context.Background(), "webshop", "webshop")
 	th.SetDocumentType(context.Background(), "product", "product")
+	th.SetDocumentType(context.Background(), "store", "store")
 
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
@@ -164,5 +165,29 @@ func generate() webshop {
 			Description: "Product shop",
 		},
 	}
+}
 
+func createFullTextSearchIndex(indexName string) error {
+	if ok, _, _ := th.InspectFullTextSearchIndex(context.Background(), indexName); ok {
+		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
+		if err != nil {
+			return err
+		}
+	}
+
+	def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+		Name:                 indexName,
+		SourceType:           "couchbase",
+		SourceName:           "company",
+		DocIDPrefixDelimiter: "::",
+	})
+	if err != nil {
+		return err
+	}
+	err = th.CreateFullTextSearchIndex(context.Background(), def)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -2,6 +2,8 @@ package bucket
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/couchbase/gocb"
@@ -77,8 +79,11 @@ func (h *Handler) SimpleSearch(ctx context.Context, index string, q *SearchQuery
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	hits, _, err := h.doSearch(ctx, query)
-	return hits, err
+	status, result, _, err := h.doSearch(ctx, query)
+	if status.Errors != nil && !reflect.ValueOf(status.Errors).IsNil() {
+		return nil, fmt.Errorf("%+v", status.Errors)
+	}
+	return result, err
 }
 
 func (h *Handler) SimpleSearchWithFacets(ctx context.Context, index string, q *SearchQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
@@ -92,8 +97,11 @@ func (h *Handler) SimpleSearchWithFacets(ctx context.Context, index string, q *S
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
 	h.addFacets(ctx, query, facets)
-
-	return h.doSearch(ctx, query)
+	status, result, facetResult, err := h.doSearch(ctx, query)
+	if status.Errors != nil && !reflect.ValueOf(status.Errors).IsNil() {
+		return nil, nil, fmt.Errorf("%+v", status.Errors)
+	}
+	return result, facetResult, err
 }
 
 func (h *Handler) CompoundSearch(ctx context.Context, index string, q *CompoundQueries) ([]gocb.SearchResultHit, error) {
@@ -106,7 +114,10 @@ func (h *Handler) CompoundSearch(ctx context.Context, index string, q *CompoundQ
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	result, _, err := h.doSearch(ctx, query)
+	status, result, _, err := h.doSearch(ctx, query)
+	if status.Errors != nil && !reflect.ValueOf(status.Errors).IsNil() {
+		return nil, fmt.Errorf("%+v", status.Errors)
+	}
 	return result, err
 }
 
@@ -121,7 +132,10 @@ func (h *Handler) CompoundSearchWithFacets(ctx context.Context, index string, q 
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
 	h.addFacets(ctx, query, facets)
-	result, facetResult, err := h.doSearch(ctx, query)
+	status, result, facetResult, err := h.doSearch(ctx, query)
+	if status.Errors != nil && !reflect.ValueOf(status.Errors).IsNil() {
+		return nil, nil, fmt.Errorf("%+v", status.Errors)
+	}
 	return result, facetResult, err
 }
 
@@ -135,7 +149,10 @@ func (h *Handler) RangeSearch(ctx context.Context, index string, q *RangeQuery) 
 	}
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
-	result, _, err := h.doSearch(ctx, query)
+	status, result, _, err := h.doSearch(ctx, query)
+	if status.Errors != nil && !reflect.ValueOf(status.Errors).IsNil() {
+		return nil, fmt.Errorf("%+v", status.Errors)
+	}
 	return result, err
 }
 
@@ -150,21 +167,27 @@ func (h *Handler) RangeSearchWithFacets(ctx context.Context, index string, q *Ra
 
 	query := gocb.NewSearchQuery(index, q).Limit(q.Limit).Skip(q.Offset)
 	h.addFacets(ctx, query, facets)
-	result, facetResult, err := h.doSearch(ctx, query)
+	status, result, facetResult, err := h.doSearch(ctx, query)
+	if status.Errors != nil && !reflect.ValueOf(status.Errors).IsNil() {
+		return nil, nil, fmt.Errorf("%+v", status.Errors)
+	}
 	return result, facetResult, err
 }
 
-func (h *Handler) doSearch(ctx context.Context, query *gocb.SearchQuery) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
+func (h *Handler) doSearch(ctx context.Context, query *gocb.SearchQuery) (gocb.SearchResultStatus, []gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
 	res, err := h.state.bucket.ExecuteSearchQuery(query)
 	if err != nil {
-		return nil, nil, err
+		if res != nil {
+			return res.Status(), nil, nil, err
+		}
+		return gocb.SearchResultStatus{}, nil, nil, err
 	}
-	//fmt.Printf("%+v\n", res.Status())
-	//for i, v := range res.Hits() {
-	//	fmt.Printf("%d ---- %+v\n", i, v)
-	//}
+	fmt.Printf("%+v\n", res.Status())
+	for i, v := range res.Hits() {
+		fmt.Printf("%d ---- %+v\n", i, v)
+	}
 
-	return res.Hits(), res.Facets(), nil
+	return res.Status(), res.Hits(), res.Facets(), nil
 }
 
 func (h *Handler) addFacets(ctx context.Context, query *gocb.SearchQuery, facets []FacetDef) {

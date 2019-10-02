@@ -11,17 +11,20 @@ import (
 func TestGetBulk(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		ws := generate()
-		_, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws)
+		_, _, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws, 0)
 		//_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
+	if err := createFullTextSearchIndex("webshop_fts_idx"); err != nil {
+		t.Fatal(err)
+	}
+
 	searchMatch := "processed"
-	res, err := th.SimpleSearch(context.Background(), "order_fts_idx", &SearchQuery{
+	res, err := th.SimpleSearch(context.Background(), "webshop_fts_idx", &SearchQuery{
 		Query: searchMatch,
-		//Field: "CardHolderName",
 	})
 	if err != nil {
 		t.Fatal(err)
