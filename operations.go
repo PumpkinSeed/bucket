@@ -10,9 +10,9 @@ import (
 
 type writerF func(string, string, interface{}, int) (gocb.Cas, error)
 type readerF func(string, string, interface{}, int) (gocb.Cas, error)
-type CAS map[string]gocb.Cas
+type Cas map[string]gocb.Cas
 
-func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (CAS, string, error) {
+func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (Cas, string, error) {
 	cas := make(map[string]gocb.Cas)
 	if id == "" {
 		id = xid.New().String()
@@ -27,7 +27,7 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}) (CA
 	return cas, id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, cas CAS) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, cas Cas) (string, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
@@ -143,7 +143,7 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	return nil
 }
 
-func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (CAS, string, error) {
+func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	cas := make(map[string]gocb.Cas)
 	if id == "" {
 		id = xid.New().String()
