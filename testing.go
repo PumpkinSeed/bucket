@@ -45,7 +45,7 @@ func seed() {
 
 		for j := 0; j < 1000; j++ {
 			instance := generate()
-			th.Insert(context.Background(), "webshop", "", instance)
+			th.Insert(context.Background(), "webshop", "", instance, 0)
 			// _, _ = th.state.bucket.Insert(instance.Token, instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
@@ -61,11 +61,11 @@ type webshop struct {
 	Status                       string   `json:"status"`
 	PaymentMethod                string   `json:"payment_method"`
 	InvoiceNumber                string   `json:"invoice_number"`
-	Email                        string   `json:"email" indexable:"true"`
+	Email                        string   `json:"email" cb_indexable:"true"`
 	CardHolderName               string   `json:"card_holder_name"`
 	CreditCardLast4Digits        string   `json:"credit_card_last_4_digits"`
-	BillingAddressName           string   `json:"billing_address_name" indexable:"true"`
-	BillingAddressCompanyName    string   `json:"billing_address_company_name" indexable:"true"`
+	BillingAddressName           string   `json:"billing_address_name" cb_indexable:"true"`
+	BillingAddressCompanyName    string   `json:"billing_address_company_name" cb_indexable:"true"`
 	BillingAddressAddress1       string   `json:"billing_address_address_1"`
 	BillingAddressAddress2       string   `json:"billing_address_address_2"`
 	BillingAddressCity           string   `json:"billing_address_city"`
@@ -89,8 +89,8 @@ type webshop struct {
 	ShippingMethod               string   `json:"shipping_method"`
 	WillBePaidLater              bool     `json:"will_be_paid_later"`
 	PaymentTransactionId         string   `json:"payment_transaction_id"`
-	Product                      *product `json:"product" referenced:"product"`
-	Store                        *store   `json:"store,omitempty" referenced:"store"`
+	Product                      *product `json:"product" cb_referenced:"product"`
+	Store                        *store   `json:"store,omitempty" cb_referenced:"store"`
 }
 
 type product struct {
