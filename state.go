@@ -88,6 +88,14 @@ func (s *state) getType(name string) (string, error) {
 	return "", ErrDocumentTypeDoesntExists
 }
 
+func (s *state) getDocumentID(id, name string) (string, error) {
+	typ, err := s.getType(name)
+	if err != nil {
+		return "", err
+	}
+	return typ + id, nil
+}
+
 func (s *state) deleteType(name string) error {
 	s.Lock()
 	defer s.Unlock()
