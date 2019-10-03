@@ -111,12 +111,7 @@ func (s *state) deleteType(name string) error {
 	if _, ok := s.DocumentTypes[name]; ok {
 		delete(s.DocumentTypes, name)
 
-		err := s.updateState()
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return s.updateState()
 	}
 
 	return ErrDocumentTypeDoesntExists
