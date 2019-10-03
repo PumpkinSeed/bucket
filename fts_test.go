@@ -34,7 +34,7 @@ func TestConjuncts(t *testing.T) {
 		},
 	}
 
-	err := cr.Setup()
+	err := cr.setup()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestRangeQuery(t *testing.T) {
 		Field:       "something",
 	}
 
-	err := rq.Setup()
+	err := rq.setup()
 	if err != nil {
 		t.Fatal(err)
 	}
