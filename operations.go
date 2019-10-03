@@ -61,7 +61,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 				if rvQField.Kind() == reflect.Ptr {
 					rvQField = reflect.Indirect(rvQField)
 				}
-
+				if !rvQField.IsValid() {
+					continue
+				}
 				if rvQField.Kind() == reflect.Struct && hasRefTag {
 					if refTag == "" {
 						return "", ErrEmptyRefTag
@@ -122,7 +124,11 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 						return ErrEmptyRefTag
 					}
 					if err = h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
-						return err
+						if err != gocb.ErrKeyNotFound {
+							return err
+						}
+						rvQField.Set(reflect.Zero(rvQField.Type()))
+						err = nil
 					}
 				}
 			}
