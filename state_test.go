@@ -2,6 +2,7 @@ package bucket
 
 import (
 	"github.com/rs/xid"
+	"os"
 	"testing"
 )
 
@@ -39,6 +40,11 @@ func TestValidate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestSeedMockEnv(t *testing.T) {
+	os.Setenv("PKG_TEST", "testing")
+	seed()
 }
 
 func TestLoad(t *testing.T) {
