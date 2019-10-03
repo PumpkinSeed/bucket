@@ -144,6 +144,20 @@ func TestInsertEmptyRefTag(t *testing.T) {
 	}
 }
 
+func TestInsertEmbeddedStructExpectKeyAlreadyExistError(t *testing.T) {
+	prod := product{}
+	ctx := context.Background()
+	_, id, err := th.Insert(ctx, "product", "", prod, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ws := generate()
+	if _, _, err := th.Insert(ctx, "webshop", id, ws, 0); err != gocb.ErrKeyExists {
+		t.Errorf("error should be %s instead of %s", gocb.ErrKeyExists, err)
+
+	}
+}
+
 func testInsert() (webshop, string, error) {
 	ws := generate()
 	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
@@ -283,6 +297,17 @@ func TestGetIDNotFoundError(t *testing.T) {
 	ws := webshop{}
 	if err := th.Get(context.Background(), "webshop", id, &ws); err == nil {
 		t.Error("read with invalid ID")
+	}
+}
+
+func TestGetInvalidInput(t *testing.T) {
+	_, id, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	wsGet := webshop{}
+	if err := th.Get(context.Background(), "webshop", id, wsGet); err != ErrInputStructPointer {
+		t.Errorf("error should be %s instead of %s", ErrInputStructPointer, err)
 	}
 }
 
@@ -456,6 +481,16 @@ func TestRemove(t *testing.T) {
 	}
 	if err := th.Get(context.Background(), "webshop", ID, &webshop{}); err != nil {
 		assert.Equal(t, gocb.ErrKeyNotFound, err, "error")
+	}
+}
+
+func TestRemoveInvalidInput(t *testing.T) {
+	_, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := th.Remove(context.Background(), "webshop", ID, webshop{}); err != ErrInvalidGetDocumentTypesParam {
+		t.Errorf("error should be %s instead of %s", ErrInvalidGetDocumentTypesParam, err)
 	}
 }
 
