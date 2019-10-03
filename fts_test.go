@@ -1,10 +1,13 @@
 package bucket
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSearchQuery(t *testing.T) {
@@ -71,60 +74,67 @@ func TestRangeQuery(t *testing.T) {
 	}
 }
 
-// @TODO should fix them
-//func TestSimpleSearchMatch(t *testing.T) {
-//	for i := 0; i < 10; i++ {
-//		order := generate()
-//		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
-//		if err != nil {
-//			t.Fatal(err)
-//		}
-//	}
-//
-//	searchMatch := "processed"
-//	mes := time.Now()
-//	_, err := th.SimpleSearch(context.Background(), "order_fts_idx", &SearchQuery{
-//		Query: searchMatch,
-//		//Field: "CardHolderName",
-//	})
-//	fmt.Println(time.Since(mes))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//	//for _, a := range res {
-//	//	fmt.Println(a.Id, a.Score)
-//	//	//resp = append(resp, a.Id)
-//	//}
-//}
-//
-//func TestSimpleSearchMatchWithFacet(t *testing.T) {
-//	for i := 0; i < 10; i++ {
-//		order := generate()
-//		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
-//		if err != nil {
-//			t.Fatal(err)
-//		}
-//	}
-//
-//	searchMatch := "Talia"
-//	mes := time.Now()
-//	_, _, err := th.SimpleSearchWithFacets(
-//		context.Background(),
-//		"order_fts_idx",
-//		&SearchQuery{
-//			Query: searchMatch,
-//		},
-//		[]FacetDef{
-//			{
-//				Name:  "BillingAddressAddress1",
-//				Type:  FacetTerm,
-//				Field: "BillingAddressAddress1",
-//				Size:  10,
-//			},
-//		},
-//	)
-//	fmt.Println(time.Since(mes))
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//}
+func TestSimpleSearchMatch(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		webshop := generate()
+		_, _, err := th.Insert(context.Background(), "webshop", "", webshop, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err := createFullTextSearchIndex("webshop_ftx_idx_simple", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	searchMatch := "processed"
+	mes := time.Now()
+	res, err := th.SimpleSearch(context.Background(), "webshop_ftx_idx_simple", &SearchQuery{
+		Query: searchMatch,
+		//Field: "CardHolderName",
+	})
+	fmt.Println(time.Since(mes))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 10, len(res), "Length of result set should be 10")
+}
+
+func TestSimpleSearchMatchWithFacet(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		webshop := generate()
+		_, _, err := th.Insert(context.Background(), "webshop", "", webshop, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err := createFullTextSearchIndex("webshop_ftx_idx_simple_f", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	searchMatch := "processed"
+	mes := time.Now()
+	res, _, err := th.SimpleSearchWithFacets(
+		context.Background(),
+		"webshop_ftx_idx_simple_f",
+		&SearchQuery{
+			Query: searchMatch,
+		},
+		[]FacetDef{
+			{
+				Name:  "BillingAddressAddress1",
+				Type:  FacetTerm,
+				Field: "BillingAddressAddress1",
+				Size:  10,
+			},
+		},
+	)
+	fmt.Println(time.Since(mes))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, 10, len(res), "Length of result set should be 10")
+}
