@@ -88,3 +88,9 @@ func TestFetchDocIdentifier(t *testing.T) {
 		t.Errorf("error should be %s instead of %s", id, s)
 	}
 }
+
+func TestCreateFTSIndex(t *testing.T) {
+	if err := createFullTextSearchIndex("order_fts_idx", true); err != nil {
+		t.Error(err)
+	}
+}
