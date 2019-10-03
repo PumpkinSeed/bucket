@@ -22,7 +22,7 @@ type Handler struct {
 	password string // temp field
 }
 
-// Config struct
+// Configuration the main library configuration
 type Configuration struct {
 	Username         string `json:"username"`
 	Password         string `json:"password"`
@@ -34,6 +34,7 @@ type Configuration struct {
 	Opts Opts `json:"bucket_opts"`
 }
 
+// Opts is the couchbase related configuration such as timeouts
 type Opts struct {
 	OperationTimeout      NullTimeout `json:"operation_timeout"`
 	BulkOperationTimeout  NullTimeout `json:"bulk_operation_timeout"`
@@ -44,7 +45,7 @@ type Opts struct {
 	AnalyticsTimeout      NullTimeout `json:"analytics_timeout"`
 }
 
-// New creates and returns  a new Handler containing configuration,state and client
+// New creates and returns a new Handler
 func New(c *Configuration) (*Handler, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -74,7 +75,7 @@ func New(c *Configuration) (*Handler, error) {
 	return h, nil
 }
 
-// Manager returns a BucketManager for performing management operations on this bucket.
+// GetManager returns a BucketManager for performing management operations on this bucket
 func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }

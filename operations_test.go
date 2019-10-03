@@ -19,6 +19,18 @@ func TestInsert(t *testing.T) {
 	}
 }
 
+func TestInsertNilEmbeddedStruct(t *testing.T) {
+	ws := generate()
+	ws.Product = nil
+	cas, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
+	if err != nil || id == "" {
+		t.Error(err)
+	}
+	if len(cas) != 2 {
+		t.Errorf("Cas should store 2 elements, instead of %d", len(cas))
+	}
+}
+
 func TestInsertNullString(t *testing.T) {
 	type nullStrTest struct {
 		Bin         int         `json:"bin"`
@@ -117,6 +129,21 @@ func TestInsertExpectDuplicateError(t *testing.T) {
 	assert.EqualValues(t, "key already exists, if a cas was provided the key exists with a different cas", errDuplicateInsert.Error(), "wrong error msg")
 }
 
+func TestInsertEmptyRefTag(t *testing.T) {
+	ws := generate()
+	s := struct {
+		Name    string   `json:"name"`
+		Product *product `json:"product" cb_referenced:""`
+	}{
+		Name:    "Missing",
+		Product: ws.Product,
+	}
+	_, _, err := th.Insert(context.Background(), "name", "", s, 0)
+	if err != ErrEmptyRefTag {
+		t.Errorf("Error should be %s instead of %s", ErrEmptyRefTag, err)
+	}
+}
+
 func testInsert() (webshop, string, error) {
 	ws := generate()
 	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
@@ -153,16 +180,29 @@ func TestGetNullString(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	cardTypeRead := nullStrTest{
-		Bin:         0,
-		CardBrand:   "",
-		IssuingBank: "",
-		CardType:    null.String{},
-	}
+	cardTypeRead := nullStrTest{}
 	if err := th.Get(context.Background(), "card_type", id, &cardTypeRead); err != nil {
 		t.Error(err)
 	}
 	assert.Equal(t, cardTypeWrite, cardTypeRead, "should be equal")
+}
+
+func TestGetNilEmbeddedStruct(t *testing.T) {
+	wsInsert := generate()
+	wsInsert.Product = nil
+	ctx := context.Background()
+	typ := "webshop"
+	id := ""
+	_, id, err := th.Insert(ctx, typ, id, wsInsert, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	wsGet := &webshop{}
+	errGet := th.Get(ctx, typ, id, wsGet)
+	if errGet != nil {
+		t.Error(errGet)
+	}
+	assert.Equal(t, &wsInsert, wsGet, "should be equal")
 }
 
 func TestGetPrimitivePtrNil(t *testing.T) {
@@ -175,7 +215,7 @@ func TestGetPrimitivePtrNil(t *testing.T) {
 	if errInsert != nil {
 		t.Error("Error")
 	}
-	var testGet = wtyp{Job: nil}
+	var testGet = wtyp{}
 	errGet := th.Get(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("Error")
@@ -184,7 +224,7 @@ func TestGetPrimitivePtrNil(t *testing.T) {
 }
 
 func TestGetPrimitivePtr(t *testing.T) {
-	a := "a"
+	a := "artist"
 	type wtyp struct {
 		Job *string `json:"name,omitempty"`
 	}
@@ -193,8 +233,7 @@ func TestGetPrimitivePtr(t *testing.T) {
 	if errInsert != nil {
 		t.Error("Error")
 	}
-	b := "b"
-	var testGet = wtyp{Job: &b}
+	var testGet = wtyp{}
 	errGet := th.Get(context.Background(), "webshop", id, &testGet)
 	if errGet != nil {
 		t.Error("Error")
