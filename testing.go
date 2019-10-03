@@ -31,6 +31,7 @@ func seed() {
 	th.SetDocumentType(context.Background(), "order", "order")
 	th.SetDocumentType(context.Background(), "webshop", "webshop")
 	th.SetDocumentType(context.Background(), "product", "product")
+	th.SetDocumentType(context.Background(), "store", "store")
 
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
@@ -45,8 +46,7 @@ func seed() {
 
 		for j := 0; j < 1000; j++ {
 			instance := generate()
-			th.Insert(context.Background(), "webshop", "", instance)
-			// _, _ = th.state.bucket.Insert(instance.Token, instance, 0)
+			th.Insert(context.Background(), "webshop", "", instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
@@ -61,11 +61,11 @@ type webshop struct {
 	Status                       string   `json:"status"`
 	PaymentMethod                string   `json:"payment_method"`
 	InvoiceNumber                string   `json:"invoice_number"`
-	Email                        string   `json:"email" indexable:"true"`
+	Email                        string   `json:"email" cb_indexable:"true"`
 	CardHolderName               string   `json:"card_holder_name"`
 	CreditCardLast4Digits        string   `json:"credit_card_last_4_digits"`
-	BillingAddressName           string   `json:"billing_address_name" indexable:"true"`
-	BillingAddressCompanyName    string   `json:"billing_address_company_name" indexable:"true"`
+	BillingAddressName           string   `json:"billing_address_name" cb_indexable:"true"`
+	BillingAddressCompanyName    string   `json:"billing_address_company_name" cb_indexable:"true"`
 	BillingAddressAddress1       string   `json:"billing_address_address_1"`
 	BillingAddressAddress2       string   `json:"billing_address_address_2"`
 	BillingAddressCity           string   `json:"billing_address_city"`
@@ -89,8 +89,8 @@ type webshop struct {
 	ShippingMethod               string   `json:"shipping_method"`
 	WillBePaidLater              bool     `json:"will_be_paid_later"`
 	PaymentTransactionId         string   `json:"payment_transaction_id"`
-	Product                      *product `json:"product"`
-	Store                        *store   `json:"store,omitempty"`
+	Product                      *product `json:"product" cb_referenced:"product"`
+	Store                        *store   `json:"store,omitempty" cb_referenced:"store"`
 }
 
 type product struct {
@@ -164,5 +164,35 @@ func generate() webshop {
 			Description: "Product shop",
 		},
 	}
+}
 
+func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
+	var ok bool
+	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
+		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !ok {
+		def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+			Name:                 indexName,
+			SourceType:           "couchbase",
+			SourceName:           "company",
+			DocIDPrefixDelimiter: "::",
+		})
+		if err != nil {
+			return err
+		}
+		err = th.CreateFullTextSearchIndex(context.Background(), def)
+		if err != nil {
+			return err
+		}
+	}
+
+	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
+	time.Sleep(1 * time.Second)
+
+	return nil
 }
