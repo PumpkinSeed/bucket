@@ -78,6 +78,18 @@ func TestDeleteType(t *testing.T) {
 	_ = th.state.setType("webshop", "webshop")
 }
 
+func TestDeleteTypeErrDocumentTypeDoesntExists(t *testing.T) {
+	err := th.state.deleteType("webshop")
+	if err != nil {
+		t.Error(err)
+	}
+	err = th.state.deleteType("webshop")
+	if err != ErrDocumentTypeDoesntExists {
+		t.Error(err)
+	}
+	_ = th.state.setType("webshop", "webshop")
+}
+
 func TestFetchDocIdentifierEmptyDocumentKey(t *testing.T) {
 	if s := th.state.fetchDocumentIdentifier(""); s != "" {
 		t.Errorf("error should be %s instead of %s", "", s)
