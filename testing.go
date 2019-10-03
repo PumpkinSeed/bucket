@@ -31,6 +31,7 @@ func seed() {
 	th.SetDocumentType(context.Background(), "order", "order")
 	th.SetDocumentType(context.Background(), "webshop", "webshop")
 	th.SetDocumentType(context.Background(), "product", "product")
+	th.SetDocumentType(context.Background(), "store", "store")
 
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
@@ -46,7 +47,6 @@ func seed() {
 		for j := 0; j < 1000; j++ {
 			instance := generate()
 			th.Insert(context.Background(), "webshop", "", instance, 0)
-			// _, _ = th.state.bucket.Insert(instance.Token, instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
@@ -164,5 +164,35 @@ func generate() webshop {
 			Description: "Product shop",
 		},
 	}
+}
 
+func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
+	var ok bool
+	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
+		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !ok {
+		def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+			Name:                 indexName,
+			SourceType:           "couchbase",
+			SourceName:           "company",
+			DocIDPrefixDelimiter: "::",
+		})
+		if err != nil {
+			return err
+		}
+		err = th.CreateFullTextSearchIndex(context.Background(), def)
+		if err != nil {
+			return err
+		}
+	}
+
+	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
+	time.Sleep(1 * time.Second)
+
+	return nil
 }

@@ -1,2 +1,2 @@
-test:
+testing:
 	PKG_TEST=testing go test ./...

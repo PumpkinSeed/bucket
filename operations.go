@@ -18,7 +18,7 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentID(id, typ)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
 		}
@@ -85,7 +85,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 
 func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
 	if err := h.read(ctx, typ, id, ptr, 0, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentID(id, typ)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
 		}
@@ -134,14 +134,13 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 }
 
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
-	typs := []string{typ}
-	e := getDocumentTypes(ptr, typs, id)
+	typs, e := getDocumentTypes(ptr)
 	if e != nil {
 		return e
 	}
 
 	for _, typ := range typs {
-		documentID, err := h.state.getDocumentID(id, typ)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return err
 		}
@@ -158,7 +157,7 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 		id = xid.New().String()
 	}
 	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentID(id, typ)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
 		}
@@ -172,14 +171,13 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 }
 
 func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
-	types := []string{typ}
-	e := getDocumentTypes(ptr, types, id)
+	typs, e := getDocumentTypes(ptr)
 	if e != nil {
 		return e
 	}
 
-	for _, typ := range types {
-		documentID, err := h.state.getDocumentID(id, typ)
+	for _, typ := range typs {
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return err
 		}
@@ -192,7 +190,7 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentID(id, typ)
+		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
 		}
