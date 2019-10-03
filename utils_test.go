@@ -25,6 +25,13 @@ func TestGetDocumentTypes(t *testing.T) {
 	}
 }
 
+func TestGetDocumentTypesNonPointerExpectError(t *testing.T) {
+	v := "webshop"
+	if _, err := getDocumentTypes(&v); err == nil {
+		t.Errorf("Error should be value argument must be a struct instead of nil")
+	}
+}
+
 func TestGetStructAddressableSubfields(t *testing.T) {
 	var ws = &webshop{}
 	var s = store{
