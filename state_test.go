@@ -1,9 +1,10 @@
 package bucket
 
 import (
-	"github.com/rs/xid"
 	"os"
 	"testing"
+
+	"github.com/rs/xid"
 )
 
 func TestUpdateState(t *testing.T) {
@@ -48,6 +49,7 @@ func TestSeedMockEnv(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
+	_ = th.state.updateState()
 	if err := th.state.load(); err != nil {
 		t.Error(err)
 	}
