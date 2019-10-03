@@ -158,6 +158,13 @@ func TestInsertEmbeddedStructExpectKeyAlreadyExistError(t *testing.T) {
 	}
 }
 
+func TestInsertDocumentTypeNotFoundState(t *testing.T) {
+	_ = th.state.deleteType("webshop")
+	if _, _, err := testInsert(); err != nil {
+		t.Error(err)
+	}
+}
+
 func testInsert() (webshop, string, error) {
 	ws := generate()
 	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
@@ -311,6 +318,45 @@ func TestGetInvalidInput(t *testing.T) {
 	}
 }
 
+func TestGetTypeNotFoundExpectError(t *testing.T) {
+	_, id, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = th.state.deleteType("webshop")
+	if err := th.Get(context.Background(), "webshop", id, webshop{}); err != ErrDocumentTypeDoesntExists {
+		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
+	}
+}
+
+func TestGetEmptyRefTagExpectErr(t *testing.T) {
+	type wsInsert struct {
+		Token   string   `json:"token"`
+		Product *product `json:"product" cb_referenced:"product"`
+	}
+	websh := wsInsert{
+		Token: "",
+		Product: &product{
+			Name:        "testprod",
+			Description: "description",
+			Price:       1221,
+			CurrencyID:  923,
+		},
+	}
+	type wsGet struct {
+		Token   string   `json:"token"`
+		Product *product `json:"product" cb_referenced:""`
+	}
+	ctx := context.Background()
+	_, id, err := th.Insert(ctx, "webshop", "", websh, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := th.Get(ctx, "webshop", id, &wsGet{}); err != ErrEmptyRefTag {
+		t.Errorf("error should be %s instead of %s", ErrEmptyRefTag, err)
+	}
+}
+
 func TestPingNilService(t *testing.T) {
 	pingReport, err := th.Ping(context.Background(), nil)
 	if err != nil {
@@ -343,14 +389,35 @@ func TestPingAllService(t *testing.T) {
 }
 
 func TestTouch(t *testing.T) {
-	_, ID, err := testInsert()
+	ws, ID, err := testInsert()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ws := webshop{}
 	if err := th.Touch(context.Background(), "webshop", ID, &ws, 10); err != nil {
 		t.Error("error", err)
+	}
+}
+
+func TestTouchDocumentTypeNotFoundExpectError(t *testing.T) {
+	ws, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = th.state.deleteType("product")
+
+	if err := th.Touch(context.Background(), "webshop", ID, &ws, 10); err != ErrDocumentTypeDoesntExists {
+		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
+	}
+}
+
+func TestTouchNonPointerInputExpectError(t *testing.T) {
+	ws, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := th.Touch(context.Background(), "webshop", ID, ws, 10); err != ErrInvalidGetDocumentTypesParam {
+		t.Errorf("error should be %s instead of %s", ErrInvalidGetDocumentTypesParam, err)
 	}
 }
 
@@ -365,6 +432,17 @@ func TestGetAndTouch(t *testing.T) {
 		t.Error("error", err)
 	}
 	assert.Equal(t, webshopInsert, ws, "should be equal")
+}
+func TestGetAndTouchDocumentTypeNotFoundExpectError(t *testing.T) {
+	ws, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = th.state.deleteType("product")
+
+	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != ErrDocumentTypeDoesntExists {
+		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
+	}
 }
 
 func TestUpsertNewID(t *testing.T) {
@@ -465,6 +543,20 @@ func TestUpsertEmptyID(t *testing.T) {
 	}
 }
 
+func TestUpsertTypeNotFoundExpectError(t *testing.T) {
+	_, id, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ws := generate()
+	_ = th.state.deleteType("product")
+	_, _, err = th.Upsert(context.Background(), "webshop", id, ws, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
 func testUpsert(id string) (webshop, string, error) {
 	ws := generate()
 	_, id, err := th.Upsert(context.Background(), "webshop", id, ws, 0)
@@ -492,6 +584,36 @@ func TestRemoveInvalidInput(t *testing.T) {
 	if err := th.Remove(context.Background(), "webshop", ID, webshop{}); err != ErrInvalidGetDocumentTypesParam {
 		t.Errorf("error should be %s instead of %s", ErrInvalidGetDocumentTypesParam, err)
 	}
+}
+
+func TestRemoveDocumentKeyNotFoundExpectError(t *testing.T) {
+	_, id, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = th.state.deleteType("product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = th.Remove(context.Background(), "webshop", id, &webshop{})
+	if err != ErrDocumentTypeDoesntExists {
+		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
+	}
+}
+
+func TestRemoveDocumentDoesntExist(t *testing.T) {
+	_, id, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = th.Remove(context.Background(), "webshop", id, &webshop{}); err != nil {
+		t.Fatal(err)
+	}
+	if err = th.Remove(context.Background(), "webshop", id, &webshop{}); err != gocb.ErrKeyNotFound {
+		t.Errorf("error should be %s instead of %s", gocb.ErrKeyNotFound, err)
+
+	}
+
 }
 
 func BenchmarkInsertEmb(b *testing.B) {
