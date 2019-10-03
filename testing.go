@@ -88,7 +88,7 @@ type webshop struct {
 	ShippingFees                 int      `json:"shipping_fees"`
 	ShippingMethod               string   `json:"shipping_method"`
 	WillBePaidLater              bool     `json:"will_be_paid_later"`
-	PaymentTransactionId         string   `json:"payment_transaction_id"`
+	PaymentTransactionID         string   `json:"payment_transaction_id"`
 	Product                      *product `json:"product" cb_referenced:"product"`
 	Store                        *store   `json:"store,omitempty" cb_referenced:"store"`
 }
@@ -143,7 +143,7 @@ func generate() webshop {
 		FinalGrandTotal:           443,
 		ShippingFees:              0,
 		ShippingMethod:            "Free shipping",
-		PaymentTransactionId:      xid.New().String(),
+		PaymentTransactionID:      xid.New().String(),
 		Product: &product{
 			ID:          xid.New().String(),
 			UserID:      xid.New().String(),

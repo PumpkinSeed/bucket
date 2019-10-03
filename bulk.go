@@ -7,6 +7,10 @@ import (
 	"github.com/couchbase/gocb"
 )
 
+// GetBulk accepts a set of hits from a search
+// and a container represents the data-structure
+// and fill it up with the hits where the container
+// should be *[]T type
 func (h *Handler) GetBulk(ctx context.Context, hits []gocb.SearchResultHit, container interface{}) error {
 	var items []gocb.BulkOp
 	rv := reflect.ValueOf(container)

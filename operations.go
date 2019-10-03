@@ -10,8 +10,11 @@ import (
 
 type writerF func(string, string, interface{}, uint32) (gocb.Cas, error)
 type readerF func(string, string, interface{}, uint32) (gocb.Cas, error)
+
+// Cas is the container of Cas operation of all documents
 type Cas map[string]gocb.Cas
 
+// Insert inserts new documents to the bucket
 func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	cas := make(map[string]gocb.Cas)
 	if id == "" {
@@ -54,7 +57,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 			refTag, hasRefTag := rtQField.Tag.Lookup(tagReferenced)
 
 			if rvQField.Kind() == reflect.Ptr && rvQField.IsNil() && !hasRefTag {
-				if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+				if tag, ok := rtQField.Tag.Lookup(tagJSON); ok {
 					fields[removeOmitempty(tag)] = nil
 				}
 			} else {
@@ -72,7 +75,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 						return id, err
 					}
 				} else {
-					if tag, ok := rtQField.Tag.Lookup(tagJson); ok {
+					if tag, ok := rtQField.Tag.Lookup(tagJSON); ok {
 						fields[removeOmitempty(tag)] = rvQField.Interface()
 					}
 				}
@@ -85,6 +88,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 	return id, err
 }
 
+// Get retrieves a document from the bucket
 func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
 	if err := h.read(ctx, typ, id, ptr, 0, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
@@ -139,6 +143,7 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 	return nil
 }
 
+// Remove removes a document from the bucket
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
 	typs, e := getDocumentTypes(ptr)
 	if e != nil {
@@ -157,6 +162,7 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	return nil
 }
 
+// Upsert perform an update/insert operation on the bucket
 func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	cas := make(map[string]gocb.Cas)
 	if id == "" {
@@ -176,6 +182,8 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 
 }
 
+// Touch touches documents, specifying a new expiry time for it.
+// The Cas value must be 0.
 func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	typs, e := getDocumentTypes(ptr)
 	if e != nil {
@@ -194,6 +202,7 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 	return nil
 }
 
+// GetAndTouch retrieves documents and simultaneously updates its expiry time.
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
@@ -207,6 +216,7 @@ func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface
 	return nil
 }
 
+// Ping will ping a list of services and verify they are active
 func (h *Handler) Ping(ctx context.Context, services []gocb.ServiceType) (*gocb.PingReport, error) {
 	report, err := h.state.bucket.Ping(services)
 	if err != nil {

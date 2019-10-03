@@ -9,6 +9,7 @@ import (
 	"github.com/couchbase/gocb"
 )
 
+// Handler is the main handler
 type Handler struct {
 	state *state
 
@@ -21,6 +22,7 @@ type Handler struct {
 	password string // temp field
 }
 
+// Configuration the main library configuration
 type Configuration struct {
 	Username         string `json:"username"`
 	Password         string `json:"password"`
@@ -32,6 +34,7 @@ type Configuration struct {
 	Opts Opts `json:"bucket_opts"`
 }
 
+// Opts is the couchbase related configuration such as timeouts
 type Opts struct {
 	OperationTimeout      NullTimeout `json:"operation_timeout"`
 	BulkOperationTimeout  NullTimeout `json:"bulk_operation_timeout"`
@@ -42,6 +45,7 @@ type Opts struct {
 	AnalyticsTimeout      NullTimeout `json:"analytics_timeout"`
 }
 
+// New creates and returns a new Handler
 func New(c *Configuration) (*Handler, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -71,10 +75,12 @@ func New(c *Configuration) (*Handler, error) {
 	return h, nil
 }
 
+// GetManager returns a BucketManager for performing management operations on this bucket
 func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }
 
+// ValidateState validates the state
 func (h *Handler) ValidateState() (bool, error) {
 	return h.state.validate()
 }
