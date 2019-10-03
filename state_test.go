@@ -126,3 +126,10 @@ func TestCreateFTSIndex(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestCreateEmptyIndexExpectError(t *testing.T) {
+	if err := createFullTextSearchIndex("", true); err != ErrEmptyIndex {
+		t.Errorf("error should be %s instead of %s", ErrEmptyIndex, err)
+
+	}
+}
