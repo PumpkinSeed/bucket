@@ -13,7 +13,7 @@ const (
 	stateDocumentKey = "bucket_state"
 )
 
-// SetDocumentType adds document type to state
+// SetDocumentType adds the type of the given field to the state
 func (h *Handler) SetDocumentType(ctx context.Context, name, prefix string) error {
 	return h.state.setType(name, prefix)
 }
@@ -112,12 +112,7 @@ func (s *state) deleteType(name string) error {
 	if _, ok := s.DocumentTypes[name]; ok {
 		delete(s.DocumentTypes, name)
 
-		err := s.updateState()
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return s.updateState()
 	}
 
 	return ErrDocumentTypeDoesntExists

@@ -97,20 +97,20 @@ type product struct {
 	ID          string `json:"id"`
 	UserID      string `json:"user_id"`
 	StoreID     string `json:"store_id"`
-	Name        string `json:"name"`
+	Name        string `json:"name" cb_indexable:"true"`
 	Description string `json:"description"`
 	Slug        string `json:"slug"`
 	Price       int64  `json:"price"`
 	SalePrice   int64  `json:"sale_price"`
 	CurrencyID  int    `json:"currency_id"`
 	OnSale      int    `json:"on_sale"`
-	Status      string `json:"status"`
+	Status      string `json:"status" cb_indexable:"true"`
 }
 
 type store struct {
 	ID          string `json:"id"`
 	UserID      string `json:"user_id"`
-	Name        string `json:"name"`
+	Name        string `json:"name" cb_indexable:"true"`
 	Description string `json:"description"`
 }
 
