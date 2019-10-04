@@ -10,12 +10,15 @@ import (
 	"github.com/couchbase/gocb/cbft"
 )
 
+// Available facet types
 const (
 	FacetDate = iota
 	FacetNumeric
 	FacetTerm
 )
 
+// SearchQuery is a representation of the available
+// search option for a SimpleSearch
 type SearchQuery struct {
 	Query       string `json:"query,omitempty"`
 	Match       string `json:"match,omitempty"`
@@ -34,6 +37,7 @@ type SearchQuery struct {
 	Offset int `json:"-"`
 }
 
+// FacetDef is a configuration helper for the search's facets
 type FacetDef struct {
 	Name  string
 	Type  int
@@ -41,6 +45,8 @@ type FacetDef struct {
 	Size  int
 }
 
+// CompoundQueries is a representation of the available
+// search option for a CompoundSearch
 type CompoundQueries struct {
 	Conjunction []SearchQuery `json:"conjuncts,omitempty"`
 	Disjunction []SearchQuery `json:"disjuncts,omitempty"`
@@ -49,6 +55,8 @@ type CompoundQueries struct {
 	Offset int `json:"-"`
 }
 
+// RangeQuery is a representation of the available
+// search option for a RangeSearch
 type RangeQuery struct {
 	StartAsTime time.Time `json:"-"`
 	EndAsTime   time.Time `json:"-"`
@@ -69,8 +77,10 @@ type RangeQuery struct {
 	Offset int `json:"-"`
 }
 
+// SimpleSearch apply the configuration of SearchQuery
+// and do the search then returns the hits
 func (h *Handler) SimpleSearch(ctx context.Context, index string, q *SearchQuery) ([]gocb.SearchResultHit, error) {
-	if err := q.Setup(); err != nil {
+	if err := q.setup(); err != nil {
 		return nil, err
 	}
 
@@ -86,8 +96,10 @@ func (h *Handler) SimpleSearch(ctx context.Context, index string, q *SearchQuery
 	return result, err
 }
 
+// SimpleSearchWithFacets apply the configuration of SearchQuery
+// and do the search then returns the hits and facets
 func (h *Handler) SimpleSearchWithFacets(ctx context.Context, index string, q *SearchQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
-	if err := q.Setup(); err != nil {
+	if err := q.setup(); err != nil {
 		return nil, nil, err
 	}
 
@@ -104,8 +116,10 @@ func (h *Handler) SimpleSearchWithFacets(ctx context.Context, index string, q *S
 	return result, facetResult, err
 }
 
+// CompoundSearch apply the configuration of CompoundQueries
+// and do the search then returns the hits
 func (h *Handler) CompoundSearch(ctx context.Context, index string, q *CompoundQueries) ([]gocb.SearchResultHit, error) {
-	if err := q.Setup(); err != nil {
+	if err := q.setup(); err != nil {
 		return nil, err
 	}
 
@@ -121,8 +135,10 @@ func (h *Handler) CompoundSearch(ctx context.Context, index string, q *CompoundQ
 	return result, err
 }
 
+// CompoundSearchWithFacets apply the configuration of CompoundQueries
+// and do the search then returns the hits and facets
 func (h *Handler) CompoundSearchWithFacets(ctx context.Context, index string, q *CompoundQueries, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
-	if err := q.Setup(); err != nil {
+	if err := q.setup(); err != nil {
 		return nil, nil, err
 	}
 
@@ -139,8 +155,10 @@ func (h *Handler) CompoundSearchWithFacets(ctx context.Context, index string, q 
 	return result, facetResult, err
 }
 
+// RangeSearch apply the configuration of RangeQuery
+// and do the search then returns the hits
 func (h *Handler) RangeSearch(ctx context.Context, index string, q *RangeQuery) ([]gocb.SearchResultHit, error) {
-	if err := q.Setup(); err != nil {
+	if err := q.setup(); err != nil {
 		return nil, err
 	}
 
@@ -156,8 +174,10 @@ func (h *Handler) RangeSearch(ctx context.Context, index string, q *RangeQuery) 
 	return result, err
 }
 
+// RangeSearchWithFacets apply the configuration of RangeQuery
+// and do the search then returns the hits and facets
 func (h *Handler) RangeSearchWithFacets(ctx context.Context, index string, q *RangeQuery, facets []FacetDef) ([]gocb.SearchResultHit, map[string]gocb.SearchResultFacet, error) {
-	if err := q.Setup(); err != nil {
+	if err := q.setup(); err != nil {
 		return nil, nil, err
 	}
 
@@ -203,7 +223,7 @@ func (h *Handler) addFacets(ctx context.Context, query *gocb.SearchQuery, facets
 	}
 }
 
-func (s *SearchQuery) Setup() error {
+func (s *SearchQuery) setup() error {
 	if s.Query != "" {
 		s.Match = ""
 		s.MatchPhrase = ""
@@ -265,22 +285,22 @@ func (s *SearchQuery) Setup() error {
 	return nil
 }
 
-func (c *CompoundQueries) Setup() error {
+func (c *CompoundQueries) setup() error {
 	if c.Conjunction == nil && c.Disjunction == nil {
-		return ErrConjunctionAndDisjunktionIsNil
+		return ErrConjunctionAndDisjunctionIsNil
 	}
 
 	if c.Conjunction != nil {
 		c.Disjunction = nil
 		for _, sq := range c.Conjunction {
-			err := sq.Setup()
+			err := sq.setup()
 			if err != nil {
 				return err
 			}
 		}
 	} else {
 		for _, sq := range c.Disjunction {
-			err := sq.Setup()
+			err := sq.setup()
 			if err != nil {
 				return err
 			}
@@ -290,7 +310,7 @@ func (c *CompoundQueries) Setup() error {
 	return nil
 }
 
-func (d *RangeQuery) Setup() error {
+func (d *RangeQuery) setup() error {
 	if d.Field == "" {
 		return ErrEmptyField
 	}

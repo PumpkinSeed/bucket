@@ -37,7 +37,7 @@ func TestConjuncts(t *testing.T) {
 		},
 	}
 
-	err := cr.Setup()
+	err := cr.setup()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestRangeQuery(t *testing.T) {
 		Field:       "something",
 	}
 
-	err := rq.Setup()
+	err := rq.setup()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -576,30 +576,30 @@ func TestRangeSearchWithFacetWithoutIndex(t *testing.T) {
 
 func TestSetupMatch(t *testing.T) {
 	query := &SearchQuery{Match: "asd", Field: "field"}
-	assert.Nil(t, query.Setup())
+	assert.Nil(t, query.setup())
 }
 
 func TestSetupMatchPharse(t *testing.T) {
 	query := &SearchQuery{MatchPhrase: "asd", Field: "field"}
-	assert.Nil(t, query.Setup())
+	assert.Nil(t, query.setup())
 }
 
 func TestSetupTerm(t *testing.T) {
 	query := &SearchQuery{Term: "asd", Field: "field"}
-	assert.Nil(t, query.Setup())
+	assert.Nil(t, query.setup())
 }
 
 func TestSetupPrefix(t *testing.T) {
 	query := &SearchQuery{Prefix: "asd", Field: "field"}
-	assert.Nil(t, query.Setup())
+	assert.Nil(t, query.setup())
 }
 
 func TestSetupRegexp(t *testing.T) {
 	query := &SearchQuery{Regexp: "asd\\d*", Field: "field"}
-	assert.Nil(t, query.Setup())
+	assert.Nil(t, query.setup())
 }
 
 func TestSetupWildcard(t *testing.T) {
 	query := &SearchQuery{Wildcard: "*", Field: "field"}
-	assert.Nil(t, query.Setup())
+	assert.Nil(t, query.setup())
 }

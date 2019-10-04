@@ -20,11 +20,13 @@ type apiResponse struct {
 	Error     string    `json:"error"`
 }
 
+// IndexDefs ...
 type IndexDefs struct {
 	UUID      string                     `json:"uuid"`
 	IndexDefs map[string]IndexDefinition `json:"indexDefs"`
 }
 
+// IndexDefinition ...
 type IndexDefinition struct {
 	Type       string          `json:"type"`
 	Name       string          `json:"name"`
@@ -34,16 +36,19 @@ type IndexDefinition struct {
 	Params     IndexParams     `json:"params"`
 }
 
+// IndexPlanParams ...
 type IndexPlanParams struct {
 	MaxPartitionsPerPIndex int64 `json:"maxPartitionsPerPIndex"`
 }
 
+// IndexParams ...
 type IndexParams struct {
 	DocConfig IndexDocConfig `json:"doc_config"`
 	Mapping   IndexMapping   `json:"mapping"`
 	Store     IndexStore     `json:"store"`
 }
 
+// IndexDocConfig ...
 type IndexDocConfig struct {
 	DocIDPrefixDelimiter string `json:"docid_prefix_delim"`
 	DocIDRegexp          string `json:"docid_regexp"`
@@ -51,6 +56,7 @@ type IndexDocConfig struct {
 	TypeField            string `json:"type_field"`
 }
 
+// IndexMapping ...
 type IndexMapping struct {
 	DefaultAnalyzer       string              `json:"default_analyzer"`
 	DefaultDatetimeParser string              `json:"default_datetime_parser"`
@@ -63,16 +69,19 @@ type IndexMapping struct {
 	TypeField             string              `json:"type_field"`
 }
 
+// IndexDefaultMapping ...
 type IndexDefaultMapping struct {
 	Dynamic bool `json:"dynamic"`
 	Enabled bool `json:"enabled"`
 }
 
+// IndexStore ...
 type IndexStore struct {
 	IndexType   string `json:"indexType"`
 	KVStoreName string `json:"kvStoreName"`
 }
 
+// IndexMeta ...
 type IndexMeta struct {
 	Name                 string
 	SourceType           string
@@ -82,6 +91,9 @@ type IndexMeta struct {
 	TypeField            string
 }
 
+// DefaultFullTextSearchIndexDefinition creates a default index def
+// for full-text search and return it in purpose to change default
+// values manually
 func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, error) {
 	if meta.Name == "" {
 		return nil, ErrEmptyIndex
@@ -150,6 +162,7 @@ func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, err
 	return ftsDef, nil
 }
 
+// CreateFullTextSearchIndex ...
 func (h *Handler) CreateFullTextSearchIndex(ctx context.Context, def *IndexDefinition) error {
 	body, err := json.Marshal(def)
 	if err != nil {
@@ -181,6 +194,7 @@ func (h *Handler) CreateFullTextSearchIndex(ctx context.Context, def *IndexDefin
 	return nil
 }
 
+// DeleteFullTextSearchIndex ...
 func (h *Handler) DeleteFullTextSearchIndex(ctx context.Context, indexName string) error {
 	req, _ := http.NewRequest("DELETE", h.fullTextSearchURL(ctx, indexName), nil)
 	setupBasicAuth(req)
@@ -209,6 +223,8 @@ func (h *Handler) DeleteFullTextSearchIndex(ctx context.Context, indexName strin
 	return nil
 }
 
+// InspectFullTextSearchIndex checks the availability of the index
+// and returns it if exists
 func (h *Handler) InspectFullTextSearchIndex(ctx context.Context, indexName string) (bool, *IndexDefinition, error) {
 	req, _ := http.NewRequest("GET", h.fullTextSearchURL(ctx, ""), nil)
 	setupBasicAuth(req)

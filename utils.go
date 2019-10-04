@@ -10,11 +10,13 @@ import (
 	"time"
 )
 
+// NullTimeout is the library's built in NullTimeout type for Opts
 type NullTimeout struct {
 	valid bool
 	Value time.Duration
 }
 
+// NullTimeoutMillisec creates a NullTimeout with the given millisec
 func NullTimeoutMillisec(dur uint64) NullTimeout {
 	return NullTimeout{
 		valid: true,
@@ -22,6 +24,7 @@ func NullTimeoutMillisec(dur uint64) NullTimeout {
 	}
 }
 
+// NullTimeoutSec creates a NullTimeout with the given sec
 func NullTimeoutSec(dur uint64) NullTimeout {
 	return NullTimeout{
 		valid: true,
@@ -29,6 +32,7 @@ func NullTimeoutSec(dur uint64) NullTimeout {
 	}
 }
 
+// NullTimeoutFrom creates a NullTimeout with the given time.Duration
 func NullTimeoutFrom(dur time.Duration) NullTimeout {
 	return NullTimeout{
 		valid: true,
