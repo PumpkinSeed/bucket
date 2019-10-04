@@ -45,7 +45,7 @@ type Opts struct {
 	AnalyticsTimeout      NullTimeout `json:"analytics_timeout"`
 }
 
-// New creates and returns a new Handler
+// New creates a new handler from the configuration that handles the operations
 func New(c *Configuration) (*Handler, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -80,7 +80,7 @@ func (h *Handler) GetManager(ctx context.Context) *gocb.BucketManager {
 	return h.state.bucket.Manager(h.username, h.password)
 }
 
-// ValidateState validates the state
+// ValidateState validates the state of the bucket
 func (h *Handler) ValidateState() (bool, error) {
 	return h.state.validate()
 }

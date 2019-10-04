@@ -14,7 +14,7 @@ type readerF func(string, string, interface{}, uint32) (gocb.Cas, error)
 // Cas is the container of Cas operation of all documents
 type Cas map[string]gocb.Cas
 
-// Insert inserts new documents to the bucket
+// Insert inserts a new record into couchbase bucket
 func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	cas := make(map[string]gocb.Cas)
 	if id == "" {
@@ -162,7 +162,7 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	return nil
 }
 
-// Upsert perform an update/insert operation on the bucket
+// Upsert inserts or replaces a document in the bucket
 func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	cas := make(map[string]gocb.Cas)
 	if id == "" {
@@ -182,8 +182,8 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 
 }
 
-// Touch touches documents, specifying a new expiry time for it.
-// The Cas value must be 0.
+// Touch touches documents, specifying a new expiry time for it
+// The Cas value must be 0
 func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	typs, e := getDocumentTypes(ptr)
 	if e != nil {
@@ -202,7 +202,7 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 	return nil
 }
 
-// GetAndTouch retrieves documents and simultaneously updates its expiry time.
+// GetAndTouch retrieves a document and simultaneously updates its expiry time
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
@@ -216,7 +216,7 @@ func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface
 	return nil
 }
 
-// Ping will ping a list of services and verify they are active
+// Ping will ping a list of services and verify they are active and responding in an acceptable period of time
 func (h *Handler) Ping(ctx context.Context, services []gocb.ServiceType) (*gocb.PingReport, error) {
 	report, err := h.state.bucket.Ping(services)
 	if err != nil {

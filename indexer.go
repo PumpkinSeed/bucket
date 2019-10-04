@@ -14,7 +14,7 @@ const (
 	tagReferenced = "cb_referenced" // referenced tag represents external types for id-s
 )
 
-// Index creates secondary indexes for the interface v
+//Index runs trough the given interface v and creates secondary indexes for all the with indexable:"true" tags
 func (h *Handler) Index(ctx context.Context, v interface{}) error {
 	if err := h.GetManager(ctx).CreatePrimaryIndex("", true, false); err != nil {
 		log.Fatalf("Error when create primary index %+v", err)
