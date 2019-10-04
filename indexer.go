@@ -17,7 +17,7 @@ const (
 //Index runs trough the given interface v and creates secondary indexes for all the with indexable:"true" tags
 func (h *Handler) Index(ctx context.Context, v interface{}) error {
 	if err := h.GetManager(ctx).CreatePrimaryIndex("", true, false); err != nil {
-		log.Fatalf("Error when create primary index %+v", err)
+		return err
 	}
 
 	t := reflect.TypeOf(v)
@@ -39,6 +39,8 @@ func goDeep(t reflect.Type, indexables map[string][]string) {
 		f := t.Field(i)
 		if f.Type.Kind() == reflect.Struct {
 			goDeep(f.Type, indexables)
+		} else if f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct {
+			goDeep(f.Type.Elem(), indexables)
 		}
 		if f.Tag != "" {
 			if json := removeOmitempty(f.Tag.Get(tagJSON)); json != "" && json != "-" {
@@ -56,18 +58,23 @@ func goDeep(t reflect.Type, indexables map[string][]string) {
 func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []string) error {
 	if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
 		if err == gocb.ErrIndexAlreadyExists {
-			if err := manager.DropIndex(indexName, true); err != nil {
-				log.Printf("Error when dropping index[%s] %+v", indexName, err)
-				return err
-			}
-			if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
-				log.Printf("Error when create secondary index %+v", err)
-				return err
-			}
+			return dropAndCreateIndex(manager, indexName, indexedFields)
 		} else {
 			log.Printf("Error when create secondary index %+v", err)
 			return err
 		}
+	}
+	return nil
+}
+
+func dropAndCreateIndex(manager *gocb.BucketManager, indexName string, indexedFields []string) error {
+	if err := manager.DropIndex(indexName, true); err != nil {
+		log.Printf("Error when dropping index[%s] %+v", indexName, err)
+		return err
+	}
+	if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
+		log.Printf("Error when create secondary index %+v", err)
+		return err
 	}
 	return nil
 }

@@ -3,15 +3,23 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/couchbase/gocb"
 )
 
 func TestIndexCreate(t *testing.T) {
-	instance := webshop{}
+	type webshopWithNonPointerNestedStruct struct {
+		webshop
+		Something  string `json:"something" cb_indexable:"true"`
+		NestedData struct {
+			Data1 int `json:"data_1"`
+		}
+	}
+	instance := webshopWithNonPointerNestedStruct{}
 
 	if err := th.Index(context.Background(), instance); err != nil {
 		t.Fatal(err)
@@ -22,38 +30,42 @@ func TestIndexCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(indexes) < 2 {
-		t.Error("Missing indexes")
-	}
+	assert.Equal(t, 5, len(indexes))
 
 	for _, ind := range indexes {
 		t.Logf("%+v", ind.Name)
 	}
 }
 
-func TestSearchWithIndex(t *testing.T) {
-	if err := th.Index(context.Background(), webshop{}); err != nil {
-		t.Fatal(err)
-	}
+func TestPrimaryIndexCreateError(t *testing.T) {
+	h := defaultHandler()
 
-	start, resp, err := searchIndexedProperty(t)
-	if err != nil {
-		t.Fatalf("One search time: %v\n%+v", start, err)
-	}
-	fmt.Printf("One search time: %v\nFound: %+v\n", time.Since(start), resp.Metrics())
+	_ = h.state.bucket.Close()
+	assert.NotNil(t, h.Index(context.Background(), webshop{}))
 }
 
-func TestSearchWithoutIndex(t *testing.T) {
+func TestExistingIndex(t *testing.T) {
 	if err := th.Index(context.Background(), webshop{}); err != nil {
 		t.Fatal(err)
 	}
-
-	start, resp, err := searchNotIndexedProperty(t)
-	if err != nil {
-		t.Fatalf("One search time: %v\n%+v", start, err)
+	if err := th.Index(context.Background(), webshop{}); err != nil {
+		t.Fatal(err)
 	}
-	fmt.Printf("One search time: %v\nFound: %+v", time.Since(start), resp.Metrics())
-	log.Println("")
+}
+
+func TestMakeIndex(t *testing.T) {
+	assert.Nil(t, makeIndex(th.GetManager(context.Background()), "randomIndexName", []string{"randomField"}))
+	assert.Nil(t, th.GetManager(context.Background()).DropIndex("randomIndexName", true))
+}
+
+func TestMakeIndexMissingIndexName(t *testing.T) {
+	h := defaultHandler()
+	assert.NotNil(t, makeIndex(h.GetManager(context.Background()), "", nil))
+}
+
+func TestDropAndCreateMissingIndexName(t *testing.T) {
+	h := defaultHandler()
+	assert.NotNil(t, dropAndCreateIndex(h.GetManager(context.Background()), "", nil))
 }
 
 func BenchmarkCreateIndex(b *testing.B) {
