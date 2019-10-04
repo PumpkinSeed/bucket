@@ -13,7 +13,7 @@ const (
 	stateDocumentKey = "bucket_state"
 )
 
-//SetDocumentType sets the type of the given field
+// SetDocumentType adds the type of the given field to the state
 func (h *Handler) SetDocumentType(ctx context.Context, name, prefix string) error {
 	return h.state.setType(name, prefix)
 }
@@ -89,7 +89,16 @@ func (s *state) getType(name string) (string, error) {
 	return "", ErrDocumentTypeDoesntExists
 }
 
-func (s *state) getDocumentID(id, name string) (string, error) {
+func (s *state) fetchDocumentIdentifier(documentKey string) string {
+	elems := strings.Split(documentKey, s.configuration.Separator)
+	if len(elems) > 0 {
+		return elems[len(elems)-1]
+	}
+
+	return ""
+}
+
+func (s *state) getDocumentKey(name, id string) (string, error) {
 	typ, err := s.getType(name)
 	if err != nil {
 		return "", err

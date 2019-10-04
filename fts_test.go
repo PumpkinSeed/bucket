@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSearchQuery(t *testing.T) {
@@ -35,7 +37,7 @@ func TestConjuncts(t *testing.T) {
 		},
 	}
 
-	err := cr.Setup()
+	err := cr.setup()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +59,7 @@ func TestRangeQuery(t *testing.T) {
 		Field:       "something",
 	}
 
-	err := rq.Setup()
+	err := rq.setup()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,16 +76,21 @@ func TestRangeQuery(t *testing.T) {
 
 func TestSimpleSearchMatch(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		order := generate()
-		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
+		webshop := generate()
+		_, _, err := th.Insert(context.Background(), "webshop", "", webshop, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	searchMatch := "Talia"
+	err := createFullTextSearchIndex("webshop_ftx_idx_simple", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	searchMatch := "processed"
 	mes := time.Now()
-	_, err := th.SimpleSearch(context.Background(), "order_fts_idx", &SearchQuery{
+	res, err := th.SimpleSearch(context.Background(), "webshop_ftx_idx_simple", &SearchQuery{
 		Query: searchMatch,
 		//Field: "CardHolderName",
 	})
@@ -91,22 +98,28 @@ func TestSimpleSearchMatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.Equal(t, 10, len(res), "Length of result set should be 10")
 }
 
 func TestSimpleSearchMatchWithFacet(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		order := generate()
-		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
+		webshop := generate()
+		_, _, err := th.Insert(context.Background(), "webshop", "", webshop, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	searchMatch := "Talia"
+	err := createFullTextSearchIndex("webshop_ftx_idx_simple_f", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	searchMatch := "processed"
 	mes := time.Now()
-	_, _, err := th.SimpleSearchWithFacets(
+	res, _, err := th.SimpleSearchWithFacets(
 		context.Background(),
-		"order_fts_idx",
+		"webshop_ftx_idx_simple_f",
 		&SearchQuery{
 			Query: searchMatch,
 		},
@@ -123,4 +136,5 @@ func TestSimpleSearchMatchWithFacet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.Equal(t, 10, len(res), "Length of result set should be 10")
 }
