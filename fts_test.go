@@ -425,26 +425,26 @@ func TestCompoundSearchWithFacetWithoutIndex(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestRangeSearch(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		order := generate()
-		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	_ = createFullTextSearchIndex("order_fts_range_idx", false)
-	mes := time.Now()
-	_, err := th.RangeSearch(context.Background(), "order_fts_range_idx", &RangeQuery{
-		StartAsTime: time.Now().Add(-2000 * time.Hour),
-		EndAsTime:   time.Now().Add(-500 * time.Hour),
-		Field:       "something",
-		//Field: "CardHolderName",
-	})
-	fmt.Println(time.Since(mes))
-
-	assert.Nil(t, err)
-}
+//func TestRangeSearch(t *testing.T) {
+//	for i := 0; i < 10; i++ {
+//		order := generate()
+//		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
+//		if err != nil {
+//			t.Fatal(err)
+//		}
+//	}
+//	_ = createFullTextSearchIndex("order_fts_range_idx", true)
+//	mes := time.Now()
+//	_, err := th.RangeSearch(context.Background(), "order_fts_range_idx", &RangeQuery{
+//		StartAsTime: time.Now().Add(-2000 * time.Hour),
+//		EndAsTime:   time.Now().Add(-500 * time.Hour),
+//		Field:       "something",
+//		//Field: "CardHolderName",
+//	})
+//	fmt.Println(time.Since(mes))
+//
+//	assert.Nil(t, err)
+//}
 
 func TestRangeSearchInvalidIndex(t *testing.T) {
 	_, err := th.RangeSearch(context.Background(), "random_range_index", &RangeQuery{
