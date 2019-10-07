@@ -26,6 +26,6 @@ couchbase-cli cluster-init -c 127.0.0.1:8091 -u Administrator -p password \
 
 # create bucket
 couchbase-cli bucket-create -c 127.0.0.1:8091 -u Administrator -p password \
---bucket=company --bucket-type=couchbase --bucket-ramsize=100 --enable-flush=1 --wait
+--bucket=company --bucket-type=couchbase --bucket-ramsize=600 --enable-flush=1 --wait
 
 wait

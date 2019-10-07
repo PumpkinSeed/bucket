@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package models;
+
+message Profile {
+    string about_me = 1;
+    repeated string activities = 2;
+    uint64 affiliation_count = 3;
+    string birthday = 4;
+    repeated string favorite_books = 5;
+    repeated string favorite_movies = 6;
+    repeated string favorite_music = 7;
+    repeated string favorite_quotes = 8;
+    repeated string favorite_tv_shoes = 9;
+    string first_name = 10;
+    repeated string interests = 11;
+    bool is_application_user = 12;
+    string last_name = 13;
+    uint64 notes_count = 14;
+    string picture_big_url = 15;
+    string picture_small_url = 16;
+    string picture_url = 17;
+    repeated string political_views = 18;
+    string religion = 19;
+    uint64 school_count = 20;
+    uint64 wall_count = 21;
+    // @inject_tag: cb_referenced:"profile_status"
+    Status status = 22;
+    // @inject_tag: cb_referenced:"profile_primary_school"
+    School primary_school = 23;
+    // @inject_tag: cb_referenced:"profile_high_school"
+    School high_school = 24;
+    // @inject_tag: cb_referenced:"profile_location"
+    Location location = 25;
+    // @inject_tag: cb_referenced:"profile_photo"
+    Photo photo = 26;
+}
+
+message Status {
+    string status = 1;
+    string update_time = 2;
+}
+
+message School {
+    repeated string concentrations = 1;
+    uint64 graduation_year = 2;
+    string name = 3;
+}
+
+message Location {
+    string city = 1;
+    string country = 2;
+    string state = 3;
+    string street = 4;
+    string zip_code = 5;
+}
+
+message Photo {
+    string caption = 1;
+    string created_at = 2;
+    string large_source = 3;
+    string link = 4;
+    string medium_source = 5;
+    string small_source = 6;
+}
+
+message Event {
+    string description = 1;
+    string end_time = 2;
+    string sub_type = 3;
+    string type = 4;
+    string host = 5;
+    // @inject_tag: cb_referenced:"event_photo"
+    Photo photo = 6;
+    // @inject_tag: cb_referenced:"event_location"
+    Location location = 7;
+    string name = 8;
+    string start_time = 9;
+}
+
+message Order {
+    string token = 1;
+    string creation_date = 2;
+    string modification_date = 3;
+    string status = 4;
+    string payment_method = 5;
+    string invoice_number = 6;
+    string email = 7;
+    string cardholder_name = 8;
+    string credit_card_last4digits = 9;
+    // @inject_tag: cb_referenced:"order_billing_address_location"
+    Location billing_address = 10;
+    string billing_address_name = 11;
+    string billing_address_phone = 18;
+    string notes = 19;
+    string shipping_address_name = 20;
+    // @inject_tag: cb_referenced:"order_shipping_address_location"
+    Location shipping_address = 21;
+    string shipping_address_phone = 28;
+    bool shipping_address_same_as_billing = 29;
+    int64 final_grand_total = 30;
+    int64 shipping_fees = 31;
+    string shipping_method = 32;
+    bool will_be_paid_later = 33;
+    string payment_transaction_id = 34;
+    // @inject_tag: cb_referenced:"order_product"
+    Product product = 35;
+    // @inject_tag: cb_referenced:"order_store"
+    Store store = 36;
+}
+
+message Product {
+    string id = 1;
+    string user_id = 2;
+    string name = 4;
+    string description = 5;
+    string slug = 6;
+    int64 price = 7;
+    int64 sale_price = 8;
+    int64 currency_id = 9;
+    int64 on_sale = 10;
+    string status = 11;
+}
+
+message Store {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+}
