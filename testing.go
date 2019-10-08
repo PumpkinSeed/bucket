@@ -2,6 +2,7 @@ package bucket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -192,7 +193,15 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 	}
 
 	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
-	time.Sleep(5 * time.Second)
-
+	//time.Sleep(5 * time.Second)
+	wait := 15
+	for ok != true || wait == 0 {
+		ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName)
+		time.Sleep(1 * time.Second)
+		wait--
+	}
+	if wait == 0 {
+		return errors.New("error creating index: " + indexName)
+	}
 	return nil
 }
