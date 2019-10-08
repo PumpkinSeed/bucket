@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/PumpkinSeed/bucket"
@@ -33,9 +34,11 @@ func init() {
 }
 
 func main() {
-	preloadAll()
+	//preloadAll()
+	//
+	//profileSelection()
 
-	profileSelection()
+	profileLoad()
 }
 
 func preloadAll() {
@@ -136,4 +139,36 @@ func profileSelection() {
 	log.Printf("Single upsert operation spent AVG: %s \n", time.Duration(upsertTimeSum/upsertNum))
 	log.Printf("Single remove operation spent AVG: %s \n", time.Duration(removeTimeSum/removeNum))
 
+}
+
+func profileLoad() {
+	var quantity, loadTimeSum = 10000, 0
+
+	var profiles = make(map[string]*models.Profile)
+	ctx := context.Background()
+	log.Printf("Start inserting new profiles... \n")
+	start := time.Now()
+	for i := 0; i < quantity; i++ {
+		profile := models.GenerateProfile()
+		_, id, err := th.Insert(ctx, ProfileType, "", profile, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		profiles[id] = profile
+	}
+	for id, v := range profiles {
+		loadTime := time.Now()
+		profile := &models.Profile{}
+		if err := th.Get(ctx, ProfileType, id, profile); err != nil {
+			log.Fatal(err)
+		}
+		loadTimeSum += int(time.Since(loadTime))
+
+		if !reflect.DeepEqual(v, profile) {
+			log.Printf("%+v\n%+v\n are not equals", v, profile)
+		}
+	}
+
+	log.Printf("All profile load time: %v", time.Since(start))
+	log.Printf("Single load operation spent AVG: %v\n", time.Duration(loadTimeSum/len(profiles)))
 }
