@@ -127,12 +127,11 @@ func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl
 					if refTag == "" {
 						return ErrEmptyRefTag
 					}
-					if err = h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
-						if err != gocb.ErrKeyNotFound {
-							return err
+					if er := h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); er != nil {
+						if er != gocb.ErrKeyNotFound {
+							return er
 						}
 						rvQField.Set(reflect.Zero(rvQField.Type()))
-						err = nil
 					}
 				}
 			}

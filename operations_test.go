@@ -300,9 +300,8 @@ func TestGetNonExportedField(t *testing.T) {
 }
 
 func TestGetIDNotFoundError(t *testing.T) {
-	id := "123"
 	ws := webshop{}
-	if err := th.Get(context.Background(), "webshop", id, &ws); err == nil {
+	if err := th.Get(context.Background(), "webshop", "123", &ws); err == nil {
 		t.Error("read with invalid ID")
 	}
 }
