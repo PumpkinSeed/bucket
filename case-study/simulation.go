@@ -34,6 +34,8 @@ func init() {
 
 func main() {
 	preloadAll()
+
+	profileSelection()
 }
 
 func preloadAll() {
@@ -74,4 +76,61 @@ func preload(typ string, generator func() interface{}) {
 	mesAvg := time.Duration(mesSum / quantity)
 	log.Printf("Total spent: %s\n", time.Duration(mesSum))
 	log.Printf("Single operation spent Avg: %s\n", mesAvg)
+}
+
+func profileSelection() {
+	var quantity, affiliationLimit = 10000, 55
+	ids := make([]string, quantity)
+	ctx := context.Background()
+	log.Printf("Start inserting new profiles... \n")
+	for i := 0; i < quantity/2; i++ {
+		profile := models.GenerateProfile()
+		_, id, err := th.Insert(ctx, ProfileType, "", profile, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ids[i] = id
+	}
+	for i := 0; i < quantity/2; i++ {
+		profile := models.GenerateProfile()
+		_, id, err := th.Upsert(ctx, ProfileType, "", profile, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ids[quantity/2+i] = id
+	}
+	log.Printf("Start profile selection... \n")
+	upsertTimeSum, removeTimeSum := 0, 0
+	upsertNum, removeNum := 0, 0
+	for i := 0; i < quantity; i++ {
+		profile := models.Profile{}
+		err := th.Get(ctx, ProfileType, ids[i], &profile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if profile.AffiliationCount < uint64(affiliationLimit) {
+			profile.Status = models.GenerateStatus()
+			mes := time.Now()
+			_, _, err := th.Upsert(ctx, ProfileType, ids[i], profile, 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+			upsertTimeSum += int(time.Since(mes))
+			upsertNum++
+		} else {
+			mes := time.Now()
+			err := th.Remove(ctx, ProfileType, ids[i], &profile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			removeTimeSum += int(time.Since(mes))
+			removeNum++
+		}
+	}
+	log.Printf("Number of upserts: %d \n", upsertNum)
+	log.Printf("Number of removes: %d \n", removeNum)
+	log.Printf("Total spent %s \n", time.Duration(removeTimeSum+upsertTimeSum))
+	log.Printf("Single upsert operation spent AVG: %s \n", time.Duration(upsertTimeSum/upsertNum))
+	log.Printf("Single remove operation spent AVG: %s \n", time.Duration(removeTimeSum/removeNum))
+
 }
