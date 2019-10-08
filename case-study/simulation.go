@@ -183,6 +183,7 @@ func touch () {
 
 	log.Printf("Start inserting new orders... \n")
 	start := time.Now()
+	insert := time.Now()
 
 	for i := 0; i < quantity; i++ {
 		order := models.GenerateOrder()
@@ -192,8 +193,9 @@ func touch () {
 		}
 		store[id] = order
 	}
-	log.Printf("New orders inserted in: %v", time.Since(start))
+	log.Printf("New orders inserted in: %v", time.Since(insert))
 
+	tTouch := time.Now()
 	var newStore = make(map[string]*models.Order)
 	for id, v := range store {
 		if c % 2 == 0 {
@@ -206,6 +208,7 @@ func touch () {
 		}
 		c++
 	}
+	log.Printf("Orders touched in: %v", time.Since(tTouch))
 
 	time.Sleep(time.Duration(timeToLive))
 
@@ -221,6 +224,8 @@ func touch () {
 	if len(results) != quantity/2 {
 		log.Fatal("touch failed")
 	}
+
+	log.Printf("Touch and check finished in: %v", time.Since(start) - time.Duration(timeToLive))
 }
 
 func ping() {
