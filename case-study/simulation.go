@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/couchbase/gocb"
 	"log"
 	"reflect"
 	"time"
@@ -171,4 +172,69 @@ func profileLoad() {
 
 	log.Printf("All profile load time: %v", time.Since(start))
 	log.Printf("Single load operation spent AVG: %v\n", time.Duration(loadTimeSum/len(profiles)))
+}
+
+func touch () {
+	var quantity = 10000
+	var timeToLive = uint32(15)
+	ctx := context.Background()
+	var store = make(map[string]*models.Order)
+	var c = 1
+
+	log.Printf("Start inserting new orders... \n")
+	start := time.Now()
+
+	for i := 0; i < quantity; i++ {
+		order := models.GenerateOrder()
+		_, id, err := th.Insert(ctx, OrderType, "", order, timeToLive)
+		if err != nil {
+			log.Fatal(err)
+		}
+		store[id] = order
+	}
+	log.Printf("New orders inserted in: %v", time.Since(start))
+
+	var newStore = make(map[string]*models.Order)
+	for id, v := range store {
+		if c % 2 == 0 {
+			err := th.Touch(ctx, OrderType, id, v, 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			newStore[id] = v
+		}
+		c++
+	}
+
+	time.Sleep(time.Duration(timeToLive))
+
+	var results []string
+	for id, v := range newStore {
+		err := th.Get(ctx, OrderType, id, v)
+		if err != nil {
+			log.Fatal(err)
+		}
+		results = append(results, id)
+	}
+
+	if len(results) != quantity/2 {
+		log.Fatal("touch failed")
+	}
+}
+
+func ping() {
+	ctx := context.Background()
+	var services []gocb.ServiceType
+	services = append(services, gocb.FtsService)
+	report, err := th.Ping(ctx, services)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, ser := range report.Services {
+		if ser.Service != gocb.FtsService && ser.Success != true {
+			log.Fatal("Full text search not available")
+		}
+	}
 }
