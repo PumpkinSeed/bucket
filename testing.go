@@ -29,10 +29,12 @@ func seed() {
 		th = defaultHandler()
 	}
 
-	th.SetDocumentType(context.Background(), "order", "order")
-	th.SetDocumentType(context.Background(), "webshop", "webshop")
-	th.SetDocumentType(context.Background(), "product", "product")
-	th.SetDocumentType(context.Background(), "store", "store")
+	_ = th.SetDocumentType(context.Background(), "order", "order")
+	_ = th.SetDocumentType(context.Background(), "webshop", "webshop")
+	_ = th.SetDocumentType(context.Background(), "product", "product")
+	_ = th.SetDocumentType(context.Background(), "store", "store")
+
+	setupFtsIndexes()
 
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
@@ -47,11 +49,22 @@ func seed() {
 
 		for j := 0; j < 1000; j++ {
 			instance := generate()
-			th.Insert(context.Background(), "webshop", "", instance, 0)
+			_, _, _ = th.Insert(context.Background(), "webshop", "", instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
 	}
+}
+
+func setupFtsIndexes() {
+	_ = createFullTextSearchIndex("order_fts_simple_facet_idx", false)
+	_ = createFullTextSearchIndex("order_fts_simple_idx", false)
+	_ = createFullTextSearchIndex("order_fts_range_idx", false)
+	_ = createFullTextSearchIndex("order_fts_range_facet_idx", false)
+	_ = createFullTextSearchIndex("order_compound_conj_fts_idx", false)
+	_ = createFullTextSearchIndex("order_compound_disj_fts_idx", false)
+	_ = createFullTextSearchIndex("order_compound_disj_facet_fts_idx", false)
+	_ = createFullTextSearchIndex("order_fts_range_facet_idx", false)
 }
 
 // webshop is a struct used for testing and represents an order of a webshop
@@ -172,6 +185,7 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
 		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 	}
@@ -184,10 +198,12 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 			DocIDPrefixDelimiter: "::",
 		})
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 		err = th.CreateFullTextSearchIndex(context.Background(), def)
 		if err != nil {
+			log.Println(err)
 			return err
 		}
 	}

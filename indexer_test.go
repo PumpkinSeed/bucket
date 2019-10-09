@@ -12,6 +12,7 @@ import (
 )
 
 func TestIndexCreate(t *testing.T) {
+	fmt.Println("hola")
 	type webshopWithNonPointerNestedStruct struct {
 		webshop
 		Something  string `json:"something" cb_indexable:"true"`

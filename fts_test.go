@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -83,7 +84,6 @@ func TestSimpleSearchMatch(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	_ = createFullTextSearchIndex("order_fts_simple_idx", false)
 	searchMatch := "processed"
 	mes := time.Now()
 	_, err := th.SimpleSearch(context.Background(), "order_fts_simple_idx", &SearchQuery{
@@ -140,7 +140,6 @@ func TestSimpleSearchMatchWithFacet(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	_ = createFullTextSearchIndex("order_fts_simple_facet_idx", false)
 	searchMatch := "Talia"
 	mes := time.Now()
 	_, _, err := th.SimpleSearchWithFacets(
@@ -232,7 +231,6 @@ func TestCompoundSearchConjunction(t *testing.T) {
 		}
 	}
 
-	_ = createFullTextSearchIndex("order_compound_conj_fts_idx", false)
 	mes := time.Now()
 
 	res, err := th.CompoundSearch(context.Background(),
@@ -263,7 +261,6 @@ func TestCompoundSearchDisjunction(t *testing.T) {
 		}
 	}
 
-	_ = createFullTextSearchIndex("order_compound_disj_fts_idx", false)
 	mes := time.Now()
 
 	res, err := th.CompoundSearch(context.Background(),
@@ -325,6 +322,7 @@ func TestCompoundSearchWithoutIndex(t *testing.T) {
 
 //TODO
 func TestCompoundSearchWithFacetDisjunction(t *testing.T) {
+
 	for i := 0; i < 10; i++ {
 		order := generate()
 		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
@@ -333,10 +331,8 @@ func TestCompoundSearchWithFacetDisjunction(t *testing.T) {
 		}
 	}
 
-	_ = createFullTextSearchIndex("order_compound_disj_facet_fts_idx", false)
 	mes := time.Now()
-
-	_, _, err := th.CompoundSearchWithFacets(context.Background(),
+	hits, facets, err := th.CompoundSearchWithFacets(context.Background(),
 		"order_compound_disj_facet_fts_idx",
 		&CompoundQueries{
 			Disjunction: []SearchQuery{
@@ -355,6 +351,8 @@ func TestCompoundSearchWithFacetDisjunction(t *testing.T) {
 		})
 	fmt.Println(time.Since(mes))
 
+	log.Printf("%+v", hits)
+	log.Printf("%+v", facets)
 	assert.Nil(t, err)
 }
 
@@ -367,7 +365,6 @@ func TestCompoundSearchWithFacetDisjunctionInvalidFacet(t *testing.T) {
 		}
 	}
 
-	_ = createFullTextSearchIndex("order_compound_disj_facet_fts_idx", false)
 	mes := time.Now()
 
 	_, _, err := th.CompoundSearchWithFacets(context.Background(),
@@ -439,11 +436,8 @@ func TestRangeSearch(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := createFullTextSearchIndex("order_fts_range_idx", true); err != nil {
-		t.Fatal(err)
-	}
 	mes := time.Now()
-	_, err := th.RangeSearch(context.Background(), "order_fts_range_idx", &RangeQuery{
+	hits, err := th.RangeSearch(context.Background(), "order_fts_range_idx", &RangeQuery{
 		StartAsTime: time.Now().Add(-2000 * time.Hour),
 		EndAsTime:   time.Now().Add(-500 * time.Hour),
 		Field:       "something",
@@ -451,6 +445,7 @@ func TestRangeSearch(t *testing.T) {
 	})
 	fmt.Println(time.Since(mes))
 
+	log.Printf("%+v", hits)
 	assert.Nil(t, err)
 }
 
@@ -491,6 +486,7 @@ func TestRangeSearchWithoutIndex(t *testing.T) {
 }
 
 func TestRangeSearchWithFacet(t *testing.T) {
+
 	for i := 0; i < 10; i++ {
 		order := generate()
 		_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
@@ -498,10 +494,9 @@ func TestRangeSearchWithFacet(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	_ = createFullTextSearchIndex("order_fts_range_facet_idx", false)
 	mes := time.Now()
 	_, _, err := th.RangeSearchWithFacets(context.Background(),
-		"order_fts_range_idx",
+		"order_fts_range_facet_idx",
 		&RangeQuery{
 			StartAsTime: time.Now().Add(-2000 * time.Hour),
 			EndAsTime:   time.Now().Add(-500 * time.Hour),
