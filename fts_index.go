@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	ftsEndpoint = "/_p/fts/api/index"
+	ftsEndpoint       = "/_p/fts/api/index"
+	ftsStatusEndpoint = "/_p/fts/api/stats/sourceStats"
 )
 
 type apiResponse struct {
@@ -191,7 +192,49 @@ func (h *Handler) CreateFullTextSearchIndex(ctx context.Context, def *IndexDefin
 		return errors.New(ar.Error)
 	}
 
+	var indexStatus bool
+	for i := 0; i < 10; i++ {
+		indexStatus, err = h.StatusCheck(ctx, def)
+		if err != nil {
+			return err
+		}
+		if indexStatus {
+			return nil
+		}
+	}
+	if !indexStatus {
+		h.DeleteFullTextSearchIndex(ctx, def.Name)
+		h.CreateFullTextSearchIndex(ctx, def)
+	}
+
 	return nil
+}
+
+func (h *Handler) StatusCheck(ctx context.Context, def *IndexDefinition) (bool, error) {
+
+	req, _ := http.NewRequest("GET", h.ftsStatusCheckURL(ctx, def.Name), bytes.NewBuffer([]byte{}))
+	setupBasicAuth(req)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := h.http.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	respbody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	var ar apiResponse
+	err = json.Unmarshal(respbody, &ar)
+	if err != nil {
+		return false, err
+	}
+	if ar.Status == "fail" || ar.Error == "rest_auth: preparePerms, err: index not found" {
+		return false, nil
+	}
+	return true, nil
 }
 
 // DeleteFullTextSearchIndex ...
@@ -256,4 +299,11 @@ func (h *Handler) fullTextSearchURL(ctx context.Context, indexName string) strin
 		return fmt.Sprintf("%s%s", h.httpAddress, ftsEndpoint)
 	}
 	return fmt.Sprintf("%s%s/%s", h.httpAddress, ftsEndpoint, indexName)
+}
+
+func (h *Handler) ftsStatusCheckURL(ctx context.Context, indexName string) string {
+	if indexName == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s%s/%s", h.httpAddress, ftsStatusEndpoint, indexName)
 }
