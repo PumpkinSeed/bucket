@@ -84,7 +84,7 @@ type IndexDefaultMapping struct {
 type IndexType struct {
 	Dynamic         bool                       `json:"dynamic"`
 	Enabled         bool                       `json:"enabled"`
-	DefaultAnalyzer string                     `json:"default_analyzer"`
+	DefaultAnalyzer string                     `json:"default_analyzer,omitempty"`
 	Properties      map[string]IndexProperties `json:"properties"`
 }
 
@@ -150,8 +150,8 @@ func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, err
 				DefaultDatetimeParser: "dateTimeOptional",
 				DefaultField:          "_all",
 				DefaultMapping: IndexDefaultMapping{
-					Dynamic: true,
-					Enabled: true,
+					Dynamic: false,
+					Enabled: false,
 				},
 				DefaultType:      "_default",
 				DocvaluesDynamic: true,
