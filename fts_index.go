@@ -28,17 +28,21 @@ type IndexDefs struct {
 
 // IndexDefinition ...
 type IndexDefinition struct {
-	Type       string          `json:"type"`
-	Name       string          `json:"name"`
-	SourceType string          `json:"sourceType"`
-	SourceName string          `json:"sourceName"`
-	PlanParams IndexPlanParams `json:"planParams"`
-	Params     IndexParams     `json:"params"`
+	Type         string          `json:"type"`
+	Name         string          `json:"name"`
+	UUID         string          `json:"uuid"`
+	SourceType   string          `json:"sourceType"`
+	SourceName   string          `json:"sourceName"`
+	SourceUUID   string          `json:"sourceUUID"`
+	SourceParams interface{}     `json:"sourceParams"` // TODO
+	PlanParams   IndexPlanParams `json:"planParams"`
+	Params       IndexParams     `json:"params"`
 }
 
 // IndexPlanParams ...
 type IndexPlanParams struct {
 	MaxPartitionsPerPIndex int64 `json:"maxPartitionsPerPIndex"`
+	NumReplicas            int64 `json:"numReplicas"`
 }
 
 // IndexParams ...
@@ -58,21 +62,48 @@ type IndexDocConfig struct {
 
 // IndexMapping ...
 type IndexMapping struct {
-	DefaultAnalyzer       string              `json:"default_analyzer"`
-	DefaultDatetimeParser string              `json:"default_datetime_parser"`
-	DefaultField          string              `json:"default_field"`
-	DefaultMapping        IndexDefaultMapping `json:"default_mapping"`
-	DefaultType           string              `json:"default_type"`
-	DocvaluesDynamic      bool                `json:"docvalues_dynamic"`
-	IndexDynamic          bool                `json:"index_dynamic"`
-	StoreDynamic          bool                `json:"store_dynamic"`
-	TypeField             string              `json:"type_field"`
+	DefaultAnalyzer       string               `json:"default_analyzer"`
+	DefaultDatetimeParser string               `json:"default_datetime_parser"`
+	DefaultField          string               `json:"default_field"`
+	DefaultMapping        IndexDefaultMapping  `json:"default_mapping"`
+	DefaultType           string               `json:"default_type"`
+	DocvaluesDynamic      bool                 `json:"docvalues_dynamic"`
+	IndexDynamic          bool                 `json:"index_dynamic"`
+	StoreDynamic          bool                 `json:"store_dynamic"`
+	TypeField             string               `json:"type_field"`
+	Types                 map[string]IndexType `json:"types"`
 }
 
 // IndexDefaultMapping ...
 type IndexDefaultMapping struct {
 	Dynamic bool `json:"dynamic"`
 	Enabled bool `json:"enabled"`
+}
+
+// IndexType ...
+type IndexType struct {
+	Dynamic         bool                       `json:"dynamic"`
+	Enabled         bool                       `json:"enabled"`
+	DefaultAnalyzer string                     `json:"default_analyzer"`
+	Properties      map[string]IndexProperties `json:"properties"`
+}
+
+// IndexProperties ...
+type IndexProperties struct {
+	Dynamic bool         `json:"dynamic"`
+	Enabled bool         `json:"enabled"`
+	Fields  []IndexField `json:"fields"`
+}
+
+// IndexField ...
+type IndexField struct {
+	Analyzer           string `json:"analyzer"`
+	IncludeInAll       bool   `json:"include_in_all"`
+	IncludeTermVectors bool   `json:"include_term_vectors"`
+	Index              bool   `json:"index"`
+	Name               string `json:"name"`
+	Store              bool   `json:"store"`
+	Type               string `json:"type"`
 }
 
 // IndexStore ...
