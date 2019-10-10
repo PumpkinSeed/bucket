@@ -19,7 +19,7 @@ func TestGetBulk(t *testing.T) {
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false); err != nil {
+	if err := createFullTextSearchIndex("webshop_fts_idx", false, "product", "name", ""); err != nil {
 		t.Fatal(err)
 	}
 
@@ -57,7 +57,7 @@ func BenchmarkGetBulk(b *testing.B) {
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false); err != nil {
+	if err := createFullTextSearchIndex("webshop_fts_idx", false, "product", "name", ""); err != nil {
 		b.Fatal(err)
 	}
 

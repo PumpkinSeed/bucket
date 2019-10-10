@@ -166,7 +166,7 @@ func generate() webshop {
 	}
 }
 
-func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
+func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype, fieldname, fieldtype string) error {
 	var ok bool
 	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
 		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
@@ -181,7 +181,36 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 			SourceType:           "couchbase",
 			SourceName:           "company",
 			DocIDPrefixDelimiter: "::",
+			TypeField:            "type_",
 		})
+		if def == nil {
+			return err
+		}
+		def.Params.Mapping.Types = map[string]IndexType{
+			doctype: {
+				Dynamic:         false,
+				Enabled:         true,
+				DefaultAnalyzer: "web",
+				Properties: map[string]IndexProperties{
+					fieldname: {
+						Dynamic: false,
+						Enabled: true,
+						Fields: []IndexField{{
+							Analyzer:           "web",
+							IncludeInAll:       true,
+							IncludeTermVectors: true,
+							Index:              true,
+							Name:               fieldname,
+							Store:              false,
+							Type:               "text",
+						}},
+					},
+				},
+			},
+		}
+		if fieldtype != "" {
+			def.Params.Mapping.Types[doctype].Properties[fieldname].Fields[0].Type = fieldtype
+		}
 		if err != nil {
 			return err
 		}
