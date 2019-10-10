@@ -41,6 +41,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 		}
 	}
 	fields := make(map[string]interface{})
+	metainfo := meta{}
 
 	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
@@ -74,6 +75,8 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas); err != nil {
 						return id, err
 					}
+					dk, _ := h.state.getDocumentKey(refTag, id)
+					metainfo.AddReferencedDocument(dk, refTag, id)
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJSON); ok {
 						fields[removeOmitempty(tag)] = rvQField.Interface()
@@ -82,6 +85,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 			}
 		}
 	}
+	fields[metaFieldName] = metainfo
 	c, err := f(typ, id, fields, ttl)
 	cas[typ] = c
 

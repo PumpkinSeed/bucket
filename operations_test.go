@@ -3,11 +3,12 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"github.com/rs/xid"
-	"github.com/volatiletech/null"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/rs/xid"
+	"github.com/volatiletech/null"
 
 	"github.com/couchbase/gocb"
 	"github.com/stretchr/testify/assert"
@@ -639,13 +640,14 @@ func BenchmarkGetSingle(b *testing.B) {
 }
 
 func BenchmarkGetEmbedded(b *testing.B) {
+	b.StopTimer()
+	//startInsert := time.Now()
+	_, id, _ := testInsert()
+	//fmt.Printf("Insert: %vns\tGet: \n", time.Since(startInsert).Nanoseconds())
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
-		startInsert := time.Now()
-		_, id, _ := testInsert()
-		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
-		start := time.Now()
 		_ = th.Get(context.Background(), "webshop", id, &webshop{})
-		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
 
