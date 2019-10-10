@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/couchbase/gocb"
 	"log"
 	"reflect"
 	"time"
+
+	"github.com/couchbase/gocb"
 
 	"github.com/PumpkinSeed/bucket"
 	"github.com/PumpkinSeed/bucket/case-study/models"
@@ -35,11 +36,11 @@ func init() {
 }
 
 func main() {
-	//preloadAll()
-	//
-	//profileSelection()
-
+	preloadAll()
+	profileSelection()
 	profileLoad()
+	touch()
+	ping()
 }
 
 func preloadAll() {
@@ -174,7 +175,7 @@ func profileLoad() {
 	log.Printf("Single load operation spent AVG: %v\n", time.Duration(loadTimeSum/len(profiles)))
 }
 
-func touch () {
+func touch() {
 	var quantity = 10000
 	var timeToLive = uint32(15)
 	ctx := context.Background()
@@ -198,7 +199,7 @@ func touch () {
 	tTouch := time.Now()
 	var newStore = make(map[string]*models.Order)
 	for id, v := range store {
-		if c % 2 == 0 {
+		if c%2 == 0 {
 			err := th.Touch(ctx, OrderType, id, v, 0)
 			if err != nil {
 				log.Fatal(err)
@@ -225,7 +226,7 @@ func touch () {
 		log.Fatal("touch failed")
 	}
 
-	log.Printf("Touch and check finished in: %v", time.Since(start) - time.Duration(timeToLive))
+	log.Printf("Touch and check finished in: %v", time.Since(start)-time.Duration(timeToLive))
 }
 
 func ping() {
