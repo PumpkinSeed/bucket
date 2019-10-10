@@ -181,7 +181,7 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype, f
 			SourceType:           "couchbase",
 			SourceName:           "company",
 			DocIDPrefixDelimiter: "::",
-			TypeField:            "type_",
+			TypeField:            "",
 		})
 		if def == nil {
 			return err
