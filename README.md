@@ -8,6 +8,9 @@ Simple Couchbase framework.
 
 Project specifically focuses on the one bucket as database approach, and makes it easier to manage complex data sets. It tries to get rid of the embedded jsons per document and separates them into different documents behind the scene.
 
+###Disclaimer:
+**DO NOT USE IN PRODUCTION.** This is still a work in progress. We will not take responsibility for any breaks in the code that happen after a new version comes out.
+
 #### Features:
 - Automatic index generator with indexable tags.
 - Simple usage through the handler.
@@ -122,9 +125,9 @@ func main() {
 }
 ```
 
-**Important:** The typ parameter will be the prefix of the initial struct, so you should use the same value for the same types!
-
-**Important 2:** IDs should be unique, if the parameter is an empty string (`""`) a globally unique ID will be automatically generated!
+**Important:** 
+- The typ parameter will be the prefix of the initial struct, so you should use the same value for the same types!
+- IDs should be unique, if the parameter is an empty string (`""`) a globally unique ID will be automatically generated!
 
 #### Additional:
 
