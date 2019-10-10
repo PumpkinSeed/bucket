@@ -55,10 +55,11 @@ func TestDefaultFullTextSearchIndexDefinitionWithoutSourceName(t *testing.T) {
 func TestIndexCreationWithAllFieldSetup(t *testing.T) {
 	const indexName = "product_fts_index"
 	def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
-		Name:       indexName,
-		SourceType: "couchbase",
-		SourceName: "company",
-		TypeField:  "type_",
+		Name:                 indexName,
+		SourceType:           "couchbase",
+		SourceName:           "company",
+		TypeField:            "type_",
+		DocIDPrefixDelimiter: "::",
 	})
 	assert.Nil(t, err)
 	def.Params.Mapping.Types = map[string]IndexType{

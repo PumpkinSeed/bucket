@@ -172,7 +172,7 @@ func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, err
 			DocIDPrefixDelimiter: meta.DocIDPrefixDelimiter,
 			Mode:                 "docid_prefix",
 			DocIDRegexp:          "",
-			TypeField:            "",
+			TypeField:            "type",
 		}
 	case meta.DocIDRegexp != "":
 		ftsDef.Params.DocConfig = IndexDocConfig{
@@ -224,6 +224,25 @@ func (h *Handler) CreateFullTextSearchIndex(ctx context.Context, def *IndexDefin
 
 	return nil
 }
+
+//func (h *Handler) CreateDefaultFullTextSearchIndex(ctx context.Context, indexName string, indexTypes map[string]IndexType) error {
+//	indexMeta := IndexMeta{
+//		Name:                 indexName,
+//		SourceType:           "couchbase",
+//		SourceName:           h.state.configuration.BucketName,
+//		DocIDPrefixDelimiter: h.state.configuration.Separator,
+//		TypeField:            "_type",
+//	}
+//	indexDef, err := DefaultFullTextSearchIndexDefinition(indexMeta)
+//	if err != nil {
+//		return err
+//	}
+//
+//	indexDef.Params.Mapping.Types = indexTypes
+//
+//	err = h.CreateFullTextSearchIndex(ctx, indexDef)
+//	return err
+//}
 
 // DeleteFullTextSearchIndex ...
 func (h *Handler) DeleteFullTextSearchIndex(ctx context.Context, indexName string) error {
