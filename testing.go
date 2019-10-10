@@ -33,6 +33,12 @@ func seed() {
 	th.SetDocumentType(context.Background(), "product", "product")
 	th.SetDocumentType(context.Background(), "store", "store")
 
+	createFullTextSearchIndex("webshop_fts_index", false, "webshop")
+	createFullTextSearchIndex("product_fts_index", false, "product")
+	createFullTextSearchIndex("store_fts_index", false, "store")
+	createFullTextSearchIndex("order_fts_idx", false, "order")
+	time.Sleep(1 * time.Second)
+
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
 		log.Print("TestEnv")
@@ -51,6 +57,7 @@ func seed() {
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
 	}
+	time.Sleep(5 * time.Second)
 }
 
 // webshop is a struct used for testing and represents an order of a webshop
@@ -166,7 +173,7 @@ func generate() webshop {
 	}
 }
 
-func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype, fieldname, fieldtype string) error {
+func createFullTextSearchIndexWithDocFields(indexName string, deleteOnExists bool, doctype, fieldname, fieldtype string) error {
 	var ok bool
 	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
 		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
@@ -222,6 +229,46 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype, f
 
 	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
 	time.Sleep(5 * time.Second)
+
+	return nil
+}
+func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype string) error {
+	var ok bool
+	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
+		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !ok {
+		def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+			Name:                 indexName,
+			SourceType:           "couchbase",
+			SourceName:           "company",
+			DocIDPrefixDelimiter: "::",
+			TypeField:            "",
+		})
+		if def == nil {
+			return err
+		}
+		def.Params.Mapping.Types = map[string]IndexType{
+			doctype: {
+				Dynamic: true,
+				Enabled: true,
+			},
+		}
+		if err != nil {
+			return err
+		}
+		err = th.CreateFullTextSearchIndex(context.Background(), def)
+		if err != nil {
+			return err
+		}
+	}
+
+	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
+	//time.Sleep(5 * time.Second)
 
 	return nil
 }

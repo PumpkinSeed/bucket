@@ -3,6 +3,7 @@ package bucket
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -18,13 +19,10 @@ func TestGetBulk(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-
-	if err := createFullTextSearchIndex("webshop_fts_idx", false, "webshop", "status", "text"); err != nil {
-		t.Fatal(err)
-	}
+	time.Sleep(1 * time.Second)
 
 	searchMatch := "processed"
-	res, err := th.SimpleSearch(context.Background(), "webshop_fts_idx", &SearchQuery{
+	res, err := th.SimpleSearch(context.Background(), "webshop_fts_index", &SearchQuery{
 		Query: searchMatch,
 	})
 	if err != nil {
@@ -57,7 +55,7 @@ func BenchmarkGetBulk(b *testing.B) {
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false, "product", "name", ""); err != nil {
+	if err := createFullTextSearchIndex("webshop_fts_index", false, "webshop"); err != nil {
 		b.Fatal(err)
 	}
 
