@@ -68,8 +68,8 @@ func TestInsertPtrValue(t *testing.T) {
 	if err != nil || id == "" {
 		t.Fatal(err)
 	}
-	if len(cas) != 3 {
-		t.Errorf("Cas should store 3 elements, instead of %d", len(cas))
+	if len(cas) != 4 {
+		t.Errorf("Cas should store 4 elements, instead of %d", len(cas))
 	}
 }
 
@@ -467,8 +467,8 @@ func TestUpsertPtrValueNewID(t *testing.T) {
 	if err != nil || id == "" {
 		t.Fatal(err)
 	}
-	if len(cas) != 3 {
-		t.Errorf("Cas should store 3 element, instead of %d", len(cas))
+	if len(cas) != 4 {
+		t.Errorf("Cas should store 4 element, instead of %d", len(cas))
 
 	}
 }
