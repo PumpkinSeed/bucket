@@ -17,6 +17,7 @@ func TestHandler_EffGet(t *testing.T) {
 	if err := th.EffGet(context.Background(), "webshop", id, &wsGet); err != nil {
 		t.Fatal(err)
 	}
+
 	assert.Equal(t, wsInsert, wsGet, "should be equal")
 }
 

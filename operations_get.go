@@ -8,7 +8,7 @@ import (
 )
 
 func (h *Handler) EffGet(ctx context.Context, typ, id string, ptr interface{}) error {
-	kv, err := h.prepareMetaInGet(ctx, typ, id, ptr)
+	kv, err := h.getAllMeta(ctx, typ, id, ptr)
 	if err != nil {
 		return err
 	}
@@ -36,20 +36,12 @@ func (h *Handler) EffGet(ctx context.Context, typ, id string, ptr interface{}) e
 	//return nil
 }
 
-func (h *Handler) prepareMetaInGet(tx context.Context, typ, id string, ptr interface{}) (map[referencedDocumentMeta]interface{}, error) {
+func (h *Handler) getAllMeta(tx context.Context, typ, id string, ptr interface{}) (map[referencedDocumentMeta]interface{}, error) {
 	var kv = make(map[referencedDocumentMeta]interface{})
 	dk, err := h.state.getDocumentKey(typ, id)
 	if err != nil {
 		return nil, err
 	}
-
-	//rv := reflect.ValueOf(ptr)
-	//fmt.Println(rv.Kind())
-	//rv.Set(reflect.New(rv.Type()))
-
-	//if rv.Kind() == reflect.Invalid {
-	//	rt := rv.Type()
-	//}
 
 	key := referencedDocumentMeta{
 		Key:  dk,
@@ -103,6 +95,11 @@ func (h *Handler) lookForNestedFields(ptr interface{}, fields map[string]interfa
 				return nil, ErrEmptyRefTag
 			}
 			fields[refTag] = rvQField.Addr().Interface()
+			var err error
+			fields, err = h.lookForNestedFields(rvQField.Interface(), fields)
+			if err != nil {
+				return fields, err
+			}
 		}
 	}
 

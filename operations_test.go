@@ -641,9 +641,7 @@ func BenchmarkGetSingle(b *testing.B) {
 
 func BenchmarkGetEmbedded(b *testing.B) {
 	b.StopTimer()
-	//startInsert := time.Now()
 	_, id, _ := testInsert()
-	//fmt.Printf("Insert: %vns\tGet: \n", time.Since(startInsert).Nanoseconds())
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {

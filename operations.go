@@ -20,7 +20,7 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 	if id == "" {
 		id = xid.New().String()
 	}
-	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
+	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
@@ -33,15 +33,15 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 	return cas, id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, *meta, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 	}
 	fields := make(map[string]interface{})
-	metainfo := meta{}
+	metainfo := &meta{}
 
 	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
@@ -70,10 +70,15 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 				}
 				if rvQField.Kind() == reflect.Struct && hasRefTag {
 					if refTag == "" {
-						return "", ErrEmptyRefTag
+						return "", nil, ErrEmptyRefTag
 					}
-					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas); err != nil {
-						return id, err
+					var imetainfo *meta
+					var err error
+					if _, imetainfo, err = h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas); err != nil {
+						return id, nil, err
+					}
+					if imetainfo != nil {
+						metainfo.ReferencedDocuments = append(metainfo.ReferencedDocuments, imetainfo.ReferencedDocuments...)
 					}
 					dk, _ := h.state.getDocumentKey(refTag, id)
 					metainfo.AddReferencedDocument(dk, refTag, id)
@@ -89,7 +94,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 	c, err := f(typ, id, fields, ttl)
 	cas[typ] = c
 
-	return id, err
+	return id, metainfo, err
 }
 
 // Get retrieves a document from the bucket
@@ -171,7 +176,7 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 	if id == "" {
 		id = xid.New().String()
 	}
-	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
+	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
