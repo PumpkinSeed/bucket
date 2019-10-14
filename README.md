@@ -16,6 +16,10 @@ Project specifically focuses on the one bucket as database approach, and makes i
 - Simple usage through the handler.
 - Following best practices of Couchbase usage behind the scene, which doesn't affect the user of the library.
 
+#### Rules:
+
+1. Only struct can be referenced
+
 #### How to use:
 
 Create a new handler with the New function, that needs a configuration.
