@@ -3,12 +3,10 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/rs/xid"
 	"github.com/volatiletech/null"
+	"strings"
+	"testing"
 
 	"github.com/couchbase/gocb"
 	"github.com/stretchr/testify/assert"
@@ -630,12 +628,10 @@ func BenchmarkInsert(b *testing.B) {
 
 func BenchmarkGetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		startInsert := time.Now()
+		b.StopTimer()
 		_, ID, _ := th.Insert(context.Background(), "webshop", "", generate(), 0)
-		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
-		start := time.Now()
+		b.StartTimer()
 		_ = th.Get(context.Background(), "webshop", ID, webshop{})
-		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
 
@@ -655,25 +651,21 @@ func BenchmarkGetPtr(b *testing.B) {
 	}
 	j := "helder"
 	for i := 0; i < b.N; i++ {
+		b.StopTimer()
 		job := jobtyp{Job: &j}
-		startInsert := time.Now()
 		_, id, _ := th.Insert(context.Background(), "job", "", job, 0)
-		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		var jobRead jobtyp
-		start := time.Now()
+		b.StartTimer()
 		_ = th.Get(context.Background(), "job", id, &jobRead)
-		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
 
 func BenchmarkRemoveEmbedded(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		startInsert := time.Now()
+		b.StopTimer()
 		_, ID, _ := testInsert()
-		fmt.Printf("Insert: %vns\tRemove: ", time.Since(startInsert).Nanoseconds())
 		split := strings.Split(ID, "::")
-		start := time.Now()
+		b.StartTimer()
 		_ = th.Remove(context.Background(), split[1], split[0], &webshop{})
-		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
