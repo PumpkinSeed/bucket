@@ -12,7 +12,7 @@ func TestGetDocumentTypesWithPointer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var expected = []string{"product", "store"}
+	var expected = []string{"product", "origin", "store"}
 	if !reflect.DeepEqual(typs, expected) {
 		t.Errorf("Types should be %v, instead of %v", expected, typs)
 	}

@@ -3,11 +3,12 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"github.com/rs/xid"
-	"github.com/volatiletech/null"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/rs/xid"
+	"github.com/volatiletech/null"
 
 	"github.com/couchbase/gocb"
 	"github.com/stretchr/testify/assert"
@@ -67,8 +68,8 @@ func TestInsertPtrValue(t *testing.T) {
 	if err != nil || id == "" {
 		t.Fatal(err)
 	}
-	if len(cas) != 3 {
-		t.Errorf("Cas should store 3 elements, instead of %d", len(cas))
+	if len(cas) != 4 {
+		t.Errorf("Cas should store 4 elements, instead of %d", len(cas))
 	}
 }
 
@@ -466,8 +467,8 @@ func TestUpsertPtrValueNewID(t *testing.T) {
 	if err != nil || id == "" {
 		t.Fatal(err)
 	}
-	if len(cas) != 3 {
-		t.Errorf("Cas should store 3 element, instead of %d", len(cas))
+	if len(cas) != 4 {
+		t.Errorf("Cas should store 4 element, instead of %d", len(cas))
 
 	}
 }
@@ -639,13 +640,12 @@ func BenchmarkGetSingle(b *testing.B) {
 }
 
 func BenchmarkGetEmbedded(b *testing.B) {
+	b.StopTimer()
+	_, id, _ := testInsert()
+	b.StartTimer()
+
 	for i := 0; i < b.N; i++ {
-		startInsert := time.Now()
-		_, id, _ := testInsert()
-		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
-		start := time.Now()
 		_ = th.Get(context.Background(), "webshop", id, &webshop{})
-		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
 
