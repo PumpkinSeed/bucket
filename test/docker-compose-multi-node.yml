@@ -1,0 +1,46 @@
+version: "3.7"
+
+services:
+  couchbase_master:
+    build:
+      context: ./docker/couchbase/
+    ports:
+      - 8091:8091
+      - 8092:8092
+      - 8093:8093
+      - 8094:8094
+      - 11210:11210
+    environment:
+      - CLUSTER_TYPE=MASTER
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 256M
+  couchbase_replica_1:
+    build:
+      context: ./docker/couchbase
+    depends_on:
+      - couchbase_master
+    environment:
+      - CLUSTER_TYPE=REPLICA
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 256M
+  couchbase_replica_2:
+    build:
+      context: ./docker/couchbase/
+    depends_on:
+      - couchbase_replica_1
+    environment:
+      - CLUSTER_TYPE=REPLICA
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 256M
