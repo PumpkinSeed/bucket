@@ -97,20 +97,6 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 	return id, metainfo, err
 }
 
-// Get retrieves a document from the bucket
-//func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
-//	if err := h.read(ctx, typ, id, ptr, 0, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-//		documentID, err := h.state.getDocumentKey(typ, id)
-//		if err != nil {
-//			return 0, err
-//		}
-//		return h.state.bucket.Get(documentID, ptr)
-//	}); err != nil {
-//		return err
-//	}
-//	return nil
-//}
-
 func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl uint32, f readerF) error {
 	_, err := f(typ, id, ptr, ttl)
 	if err != nil {
