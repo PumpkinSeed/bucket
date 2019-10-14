@@ -7,7 +7,18 @@ import (
 	"github.com/couchbase/gocb"
 )
 
-func (h *Handler) EffGet(ctx context.Context, typ, id string, ptr interface{}) error {
+// Get retrieves a document from the bucket
+func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
+	if _, err := h.state.getDocumentKey(typ, id); err != nil {
+		return err
+	}
+
+	// checks for invalid input, ptr must be a pointer
+	if err := h.inputcheck(ptr); err != nil {
+		return err
+	}
+
+	// getAllMeta
 	kv, err := h.getAllMeta(ctx, typ, id, ptr)
 	if err != nil {
 		return err
@@ -36,6 +47,15 @@ func (h *Handler) EffGet(ctx context.Context, typ, id string, ptr interface{}) e
 	//return nil
 }
 
+func (h *Handler) inputcheck(ptr interface{}) error {
+	if reflect.ValueOf(ptr).Kind() != reflect.Ptr {
+		return ErrInputStructPointer
+	}
+
+	return nil
+}
+
+// getAllMeta read the document meta field and
 func (h *Handler) getAllMeta(tx context.Context, typ, id string, ptr interface{}) (map[referencedDocumentMeta]interface{}, error) {
 	var kv = make(map[referencedDocumentMeta]interface{})
 	dk, err := h.state.getDocumentKey(typ, id)
@@ -90,10 +110,13 @@ func (h *Handler) lookForNestedFields(ptr interface{}, fields map[string]interfa
 			if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
 				continue
 			}
-			rvQField.Set(reflect.New(rvQField.Type().Elem()))
 			if refTag == "" {
 				return nil, ErrEmptyRefTag
 			}
+			if _, ok := fields[refTag]; !ok {
+				continue
+			}
+			rvQField.Set(reflect.New(rvQField.Type().Elem()))
 			fields[refTag] = rvQField.Addr().Interface()
 			var err error
 			fields, err = h.lookForNestedFields(rvQField.Interface(), fields)
