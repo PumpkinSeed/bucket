@@ -3,10 +3,11 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"github.com/rs/xid"
-	"github.com/volatiletech/null"
 	"strings"
 	"testing"
+
+	"github.com/rs/xid"
+	"github.com/volatiletech/null"
 
 	"github.com/couchbase/gocb"
 	"github.com/stretchr/testify/assert"
@@ -168,191 +169,6 @@ func testInsert() (webshop, string, error) {
 	ws := generate()
 	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
 	return ws, id, err
-}
-
-func TestGet(t *testing.T) {
-	wsInsert, id, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	wsGet := webshop{}
-	if err := th.Get(context.Background(), "webshop", id, &wsGet); err != nil {
-		t.Fatal(err)
-	}
-	assert.Equal(t, wsInsert, wsGet, "should be equal")
-}
-
-func TestGetNullString(t *testing.T) {
-	type nullStrTest struct {
-		Bin         int         `json:"bin"`
-		CardBrand   string      `json:"card_brand"`
-		IssuingBank string      `json:"issuing_bank"`
-		CardType    null.String `json:"card_type"`
-	}
-	cardTypeWrite := nullStrTest{
-		Bin:         50003,
-		CardBrand:   "VISA",
-		IssuingBank: "",
-		CardType:    null.String{String: "US", Valid: true},
-	}
-	_, id, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite, 0)
-	if err != nil {
-		t.Error(err)
-	}
-	cardTypeRead := nullStrTest{}
-	if err := th.Get(context.Background(), "card_type", id, &cardTypeRead); err != nil {
-		t.Error(err)
-	}
-	assert.Equal(t, cardTypeWrite, cardTypeRead, "should be equal")
-}
-
-func TestGetNilEmbeddedStruct(t *testing.T) {
-	wsInsert := generate()
-	wsInsert.Product = nil
-	ctx := context.Background()
-	typ := "webshop"
-	id := ""
-	_, id, err := th.Insert(ctx, typ, id, wsInsert, 0)
-	if err != nil {
-		t.Error(err)
-	}
-	wsGet := &webshop{}
-	errGet := th.Get(ctx, typ, id, wsGet)
-	if errGet != nil {
-		t.Error(errGet)
-	}
-	assert.Equal(t, &wsInsert, wsGet, "should be equal")
-}
-
-func TestGetPrimitivePtrNil(t *testing.T) {
-	a := "a"
-	type wtyp struct {
-		Job *string `json:"name,omitempty"`
-	}
-	test := wtyp{Job: &a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
-	if errInsert != nil {
-		t.Error("Error")
-	}
-	var testGet = wtyp{}
-	errGet := th.Get(context.Background(), "webshop", id, &testGet)
-	if errGet != nil {
-		t.Error("Error")
-	}
-	assert.Equal(t, test, testGet, "They should be equal")
-}
-
-func TestGetPrimitivePtr(t *testing.T) {
-	a := "artist"
-	type wtyp struct {
-		Job *string `json:"name,omitempty"`
-	}
-	test := wtyp{Job: &a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
-	if errInsert != nil {
-		t.Error("Error")
-	}
-	var testGet = wtyp{}
-	errGet := th.Get(context.Background(), "webshop", id, &testGet)
-	if errGet != nil {
-		t.Error("Error")
-	}
-	assert.Equal(t, test, testGet, "They should be equal")
-}
-
-func TestGetNonPointerInput(t *testing.T) {
-	a := "a"
-	type wtyp struct {
-		Job *string `json:"name,omitempty"`
-	}
-	test := wtyp{Job: &a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
-	if errInsert != nil {
-		t.Error("Error")
-	}
-	var testGet = wtyp{}
-	errGet := th.Get(context.Background(), "webshop", id, &testGet)
-	if errGet != nil {
-		t.Error("error")
-	}
-	assert.Equal(t, test, testGet, "They should be equal")
-}
-
-func TestGetNonExportedField(t *testing.T) {
-	a := "helder"
-	type wtyp struct {
-		job string
-	}
-	testInsert := wtyp{job: a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", testInsert, 0)
-	if errInsert != nil {
-		t.Error("Error")
-	}
-	var testGet = wtyp{}
-	errGet := th.Get(context.Background(), "webshop", id, &testGet)
-	if errGet != nil {
-		t.Error("error")
-	}
-	assert.NotEqual(t, testInsert, testGet, "They should be not equal")
-
-}
-
-func TestGetIDNotFoundError(t *testing.T) {
-	ws := webshop{}
-	if err := th.Get(context.Background(), "webshop", "123", &ws); err == nil {
-		t.Error("read with invalid ID")
-	}
-}
-
-func TestGetInvalidInput(t *testing.T) {
-	_, id, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	wsGet := webshop{}
-	if err := th.Get(context.Background(), "webshop", id, wsGet); err != ErrInputStructPointer {
-		t.Errorf("error should be %s instead of %s", ErrInputStructPointer, err)
-	}
-}
-
-func TestGetTypeNotFoundExpectError(t *testing.T) {
-	_, id, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = th.state.deleteType("webshop")
-	if err := th.Get(context.Background(), "webshop", id, webshop{}); err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
-func TestGetEmptyRefTagExpectErr(t *testing.T) {
-	type wsInsert struct {
-		Token   string   `json:"token"`
-		Product *product `json:"product" cb_referenced:"product"`
-	}
-	websh := wsInsert{
-		Token: "",
-		Product: &product{
-			Name:        "testprod",
-			Description: "description",
-			Price:       1221,
-			CurrencyID:  923,
-		},
-	}
-	type wsGet struct {
-		Token   string   `json:"token"`
-		Product *product `json:"product" cb_referenced:""`
-	}
-	ctx := context.Background()
-	_, id, err := th.Insert(ctx, "webshop", "", websh, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := th.Get(ctx, "webshop", id, &wsGet{}); err != ErrEmptyRefTag {
-		t.Errorf("error should be %s instead of %s", ErrEmptyRefTag, err)
-	}
 }
 
 func TestPingNilService(t *testing.T) {
@@ -623,40 +439,6 @@ func BenchmarkInsertEmb(b *testing.B) {
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _, _ = th.Insert(context.Background(), "webshop", "", generate(), 0)
-	}
-}
-
-func BenchmarkGetSingle(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		_, ID, _ := th.Insert(context.Background(), "webshop", "", generate(), 0)
-		b.StartTimer()
-		_ = th.Get(context.Background(), "webshop", ID, webshop{})
-	}
-}
-
-func BenchmarkGetEmbedded(b *testing.B) {
-	b.StopTimer()
-	_, id, _ := testInsert()
-	b.StartTimer()
-
-	for i := 0; i < b.N; i++ {
-		_ = th.Get(context.Background(), "webshop", id, &webshop{})
-	}
-}
-
-func BenchmarkGetPtr(b *testing.B) {
-	type jobtyp struct {
-		Job *string `json:"job,omitempty"`
-	}
-	j := "helder"
-	for i := 0; i < b.N; i++ {
-		b.StopTimer()
-		job := jobtyp{Job: &j}
-		_, id, _ := th.Insert(context.Background(), "job", "", job, 0)
-		var jobRead jobtyp
-		b.StartTimer()
-		_ = th.Get(context.Background(), "job", id, &jobRead)
 	}
 }
 
