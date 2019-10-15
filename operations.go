@@ -9,7 +9,8 @@ import (
 )
 
 type writerF func(string, string, interface{}, uint32) (gocb.Cas, error)
-type readerF func(string, string, interface{}, uint32) (gocb.Cas, error)
+
+//type readerF func(string, string, interface{}, uint32) (gocb.Cas, error)
 
 // Cas is the container of Cas operation of all documents
 type Cas map[string]gocb.Cas
@@ -20,7 +21,7 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 	if id == "" {
 		id = xid.New().String()
 	}
-	id, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
+	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
@@ -33,14 +34,15 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 	return cas, id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, *meta, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
 	}
 	fields := make(map[string]interface{})
+	metainfo := &meta{}
 
 	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
@@ -69,11 +71,18 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 				}
 				if rvQField.Kind() == reflect.Struct && hasRefTag {
 					if refTag == "" {
-						return "", ErrEmptyRefTag
+						return "", nil, ErrEmptyRefTag
 					}
-					if _, err := h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas); err != nil {
-						return id, err
+					var imetainfo *meta
+					var err error
+					if _, imetainfo, err = h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas); err != nil {
+						return id, nil, err
 					}
+					if imetainfo != nil {
+						metainfo.ReferencedDocuments = append(metainfo.ReferencedDocuments, imetainfo.ReferencedDocuments...)
+					}
+					dk, _ := h.state.getDocumentKey(refTag, id)
+					metainfo.AddReferencedDocument(dk, refTag, id)
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJSON); ok {
 						fields[removeOmitempty(tag)] = rvQField.Interface()
@@ -82,64 +91,11 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 			}
 		}
 	}
+	fields[metaFieldName] = metainfo
 	c, err := f(typ, id, fields, ttl)
 	cas[typ] = c
 
-	return id, err
-}
-
-// Get retrieves a document from the bucket
-func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
-	if err := h.read(ctx, typ, id, ptr, 0, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return 0, err
-		}
-		return h.state.bucket.Get(documentID, ptr)
-	}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl uint32, f readerF) error {
-	_, err := f(typ, id, ptr, ttl)
-	if err != nil {
-		return err
-	}
-
-	rvQ := reflect.ValueOf(ptr)
-	rtQ := rvQ.Type()
-
-	if rtQ.Kind() == reflect.Ptr {
-		rvQ = reflect.Indirect(rvQ)
-		rtQ = rvQ.Type()
-		if rtQ.Kind() == reflect.Struct {
-			for i := 0; i < rvQ.NumField(); i++ {
-				rvQField := rvQ.Field(i)
-				rtQField := rtQ.Field(i)
-				if rvQField.Kind() == reflect.Ptr {
-					refTag, hasRefTag := rtQField.Tag.Lookup(tagReferenced)
-					if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
-						continue
-					}
-					rvQField.Set(reflect.New(rvQField.Type().Elem()))
-					if refTag == "" {
-						return ErrEmptyRefTag
-					}
-					if err := h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
-						if err != gocb.ErrKeyNotFound {
-							return err
-						}
-						rvQField.Set(reflect.Zero(rvQField.Type()))
-					}
-				}
-			}
-		}
-	} else {
-		return ErrInputStructPointer
-	}
-	return nil
+	return id, metainfo, err
 }
 
 // Remove removes a document from the bucket
@@ -167,7 +123,7 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 	if id == "" {
 		id = xid.New().String()
 	}
-	id, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
+	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
 		documentID, err := h.state.getDocumentKey(typ, id)
 		if err != nil {
 			return 0, err
@@ -197,20 +153,6 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 		if _, err := h.state.bucket.Touch(documentID, 0, ttl); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-// GetAndTouch retrieves a document and simultaneously updates its expiry time
-func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
-	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return 0, err
-		}
-		return h.state.bucket.GetAndTouch(documentID, uint32(ttl), ptr)
-	}); err != nil {
-		return err
 	}
 	return nil
 }

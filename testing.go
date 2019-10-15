@@ -94,17 +94,26 @@ type webshop struct {
 }
 
 type product struct {
-	ID          string `json:"id"`
-	UserID      string `json:"user_id"`
-	StoreID     string `json:"store_id"`
-	Name        string `json:"name" cb_indexable:"true"`
-	Description string `json:"description"`
-	Slug        string `json:"slug"`
-	Price       int64  `json:"price"`
-	SalePrice   int64  `json:"sale_price"`
-	CurrencyID  int    `json:"currency_id"`
-	OnSale      int    `json:"on_sale"`
-	Status      string `json:"status" cb_indexable:"true"`
+	ID          string  `json:"id"`
+	UserID      string  `json:"user_id"`
+	StoreID     string  `json:"store_id"`
+	Name        string  `json:"name" cb_indexable:"true"`
+	Description string  `json:"description"`
+	Slug        string  `json:"slug"`
+	Price       int64   `json:"price"`
+	SalePrice   int64   `json:"sale_price"`
+	CurrencyID  int     `json:"currency_id"`
+	OnSale      int     `json:"on_sale"`
+	Status      string  `json:"status" cb_indexable:"true"`
+	Origin      *origin `json:"origin" cb_referenced:"origin"`
+}
+
+type origin struct {
+	Country     string `json:"country"`
+	Year        int    `json:"year"`
+	Shipment    string `json:"shipment"`
+	CargoNumber string `json:"cargo_number"`
+	ArrivalDate string `json:"arrival_date"`
 }
 
 type store struct {
@@ -156,6 +165,13 @@ func generate() webshop {
 			CurrencyID:  2,
 			OnSale:      123,
 			Status:      "active",
+			Origin: &origin{
+				Country:     gofakeit.Country(),
+				Year:        gofakeit.Number(1990, 2019),
+				Shipment:    "FedEx",
+				CargoNumber: xid.New().String(),
+				ArrivalDate: "2019-01-01",
+			},
 		},
 		Store: &store{
 			ID:          xid.New().String(),
