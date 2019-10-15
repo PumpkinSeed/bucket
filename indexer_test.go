@@ -2,10 +2,10 @@ package bucket
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/couchbase/gocb"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIndexCreate(t *testing.T) {
