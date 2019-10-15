@@ -196,6 +196,19 @@ func TestHandler_GetEmptyRefTagExpectErr(t *testing.T) {
 	}
 }
 
+func TestHandler_GetAndTouch(t *testing.T) {
+	webshopInsert, ID, err := testInsert()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ws := webshop{}
+	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != nil {
+		t.Error("error", err)
+	}
+	assert.Equal(t, webshopInsert, ws, "should be equal")
+}
+
 func BenchmarkHandler_Get(b *testing.B) {
 	b.StopTimer()
 	_, id, err := testInsert()

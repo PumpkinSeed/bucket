@@ -9,7 +9,8 @@ import (
 )
 
 type writerF func(string, string, interface{}, uint32) (gocb.Cas, error)
-type readerF func(string, string, interface{}, uint32) (gocb.Cas, error)
+
+//type readerF func(string, string, interface{}, uint32) (gocb.Cas, error)
 
 // Cas is the container of Cas operation of all documents
 type Cas map[string]gocb.Cas
@@ -97,46 +98,6 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 	return id, metainfo, err
 }
 
-func (h *Handler) read(ctx context.Context, typ, id string, ptr interface{}, ttl uint32, f readerF) error {
-	_, err := f(typ, id, ptr, ttl)
-	if err != nil {
-		return err
-	}
-
-	rvQ := reflect.ValueOf(ptr)
-	rtQ := rvQ.Type()
-
-	if rtQ.Kind() == reflect.Ptr {
-		rvQ = reflect.Indirect(rvQ)
-		rtQ = rvQ.Type()
-		if rtQ.Kind() == reflect.Struct {
-			for i := 0; i < rvQ.NumField(); i++ {
-				rvQField := rvQ.Field(i)
-				rtQField := rtQ.Field(i)
-				if rvQField.Kind() == reflect.Ptr {
-					refTag, hasRefTag := rtQField.Tag.Lookup(tagReferenced)
-					if !hasRefTag || rvQField.Type().Elem().Kind() != reflect.Struct {
-						continue
-					}
-					rvQField.Set(reflect.New(rvQField.Type().Elem()))
-					if refTag == "" {
-						return ErrEmptyRefTag
-					}
-					if err := h.read(ctx, refTag, id, rvQField.Interface(), ttl, f); err != nil {
-						if err != gocb.ErrKeyNotFound {
-							return err
-						}
-						rvQField.Set(reflect.Zero(rvQField.Type()))
-					}
-				}
-			}
-		}
-	} else {
-		return ErrInputStructPointer
-	}
-	return nil
-}
-
 // Remove removes a document from the bucket
 func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) error {
 	typs, e := getDocumentTypes(ptr)
@@ -192,20 +153,6 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 		if _, err := h.state.bucket.Touch(documentID, 0, ttl); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-// GetAndTouch retrieves a document and simultaneously updates its expiry time
-func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
-	if err := h.read(ctx, typ, id, ptr, ttl, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return 0, err
-		}
-		return h.state.bucket.GetAndTouch(documentID, uint32(ttl), ptr)
-	}); err != nil {
-		return err
 	}
 	return nil
 }

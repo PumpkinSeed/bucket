@@ -235,30 +235,6 @@ func TestTouchNonPointerInputExpectError(t *testing.T) {
 	}
 }
 
-func TestGetAndTouch(t *testing.T) {
-	webshopInsert, ID, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ws := webshop{}
-	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != nil {
-		t.Error("error", err)
-	}
-	assert.Equal(t, webshopInsert, ws, "should be equal")
-}
-func TestGetAndTouchDocumentTypeNotFoundExpectError(t *testing.T) {
-	ws, ID, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = th.state.deleteType("product")
-
-	if err := th.GetAndTouch(context.Background(), "webshop", ID, &ws, 10); err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
 func TestUpsertNewID(t *testing.T) {
 	if _, id, err := testUpsert(xid.New().String()); err != nil || id == "" {
 		t.Fatal(err)

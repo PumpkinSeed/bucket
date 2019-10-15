@@ -9,19 +9,47 @@ import (
 
 // Get retrieves a document from the bucket
 func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) error {
-	if _, err := h.state.getDocumentKey(typ, id); err != nil {
+	kv, err := h.get(ctx, typ, id, ptr)
+	if err != nil {
 		return err
+	}
+
+	var ops []gocb.BulkOp
+	for k, v := range kv {
+		ops = append(ops, &gocb.GetOp{Key: k.Key, Value: v})
+	}
+
+	return h.state.bucket.Do(ops)
+}
+
+func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
+	kv, err := h.get(ctx, typ, id, ptr)
+	if err != nil {
+		return err
+	}
+
+	var ops []gocb.BulkOp
+	for k, v := range kv {
+		ops = append(ops, &gocb.GetAndTouchOp{Key: k.Key, Value: v, Expiry: ttl})
+	}
+
+	return h.state.bucket.Do(ops)
+}
+
+func (h *Handler) get(ctx context.Context, typ, id string, ptr interface{}) (map[referencedDocumentMeta]interface{}, error) {
+	if _, err := h.state.getDocumentKey(typ, id); err != nil {
+		return nil, err
 	}
 
 	// checks for invalid input, ptr must be a pointer
 	if err := h.inputcheck(ptr); err != nil {
-		return err
+		return nil, err
 	}
 
 	// returns the list of available documents must setup by the BulkOp
 	kv, err := h.availableDocuments(ctx, typ, id, ptr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// prepare the resultset what the Get looks for
@@ -29,7 +57,7 @@ func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) erro
 
 	fields, err := h.lookForNestedFields(ptr, lookFor)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// setup document key and value pointer pairs for GetOp
@@ -39,12 +67,7 @@ func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) erro
 		}
 	}
 
-	var ops []gocb.BulkOp
-	for k, v := range kv {
-		ops = append(ops, &gocb.GetOp{Key: k.Key, Value: v})
-	}
-
-	return h.state.bucket.Do(ops)
+	return kv, nil
 }
 
 func (h *Handler) inputcheck(ptr interface{}) error {
