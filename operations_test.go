@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/rs/xid"
 	"github.com/volatiletech/null"
@@ -445,12 +444,10 @@ func BenchmarkInsert(b *testing.B) {
 
 func BenchmarkRemoveEmbedded(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		startInsert := time.Now()
+		b.StopTimer()
 		_, ID, _ := testInsert()
-		fmt.Printf("Insert: %vns\tRemove: ", time.Since(startInsert).Nanoseconds())
 		split := strings.Split(ID, "::")
-		start := time.Now()
+		b.StartTimer()
 		_ = th.Remove(context.Background(), split[1], split[0], &webshop{})
-		fmt.Printf("%vns\n", time.Since(start).Nanoseconds())
 	}
 }
