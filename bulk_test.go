@@ -3,7 +3,6 @@ package bucket
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -14,12 +13,10 @@ func TestGetBulk(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		ws := generate()
 		_, _, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws, 0)
-		//_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	time.Sleep(1 * time.Second)
 
 	searchMatch := "processed"
 	res, err := th.SimpleSearch(context.Background(), "webshop_fts_index", &SearchQuery{
