@@ -2,13 +2,10 @@ package bucket
 
 import (
 	"context"
-	"fmt"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/couchbase/gocb"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIndexCreate(t *testing.T) {
@@ -83,53 +80,49 @@ func BenchmarkCreateIndex(b *testing.B) {
 }
 
 func BenchmarkWithIndex(b *testing.B) {
+	b.StopTimer()
 	if err := th.Index(context.Background(), webshop{}); err != nil {
 		b.Fatal(err)
 	}
 
-	globalTimer := time.Now()
-	for i := 0; i < 100; i++ {
-		start, resp, err := searchIndexedProperty(&testing.T{})
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := searchIndexedProperty(&testing.T{})
 		if err != nil {
-			b.Fatalf("One search time: %v\n%+v", start, err)
+			b.Fatal(err)
 		}
-		fmt.Printf("One search time: %v\nFound: %+v\n", time.Since(start), resp.Metrics())
 	}
-	fmt.Printf("Global time: %v\n", time.Since(globalTimer))
 }
 
 func BenchmarkWithoutIndex(b *testing.B) {
+	b.StopTimer()
 	if err := th.Index(context.Background(), webshop{}); err != nil {
 		b.Fatal(err)
 	}
 
-	globalTimer := time.Now()
-	for i := 0; i < 100; i++ {
-		start, resp, err := searchNotIndexedProperty(&testing.T{})
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := searchNotIndexedProperty(&testing.T{})
 		if err != nil {
-			b.Fatalf("One search time: %v\n%+v", start, err)
+			b.Fatal(err)
 		}
-		fmt.Printf("One search time: %v\nFound: %+v\n", time.Since(start), resp.Metrics())
 	}
-	fmt.Printf("Global time: %v\n", time.Since(globalTimer))
 }
 
-func searchIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
-	start := time.Now()
+func searchIndexedProperty(t *testing.T) (gocb.QueryResults, error) {
 	resp, err := th.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(email, $1)"), []interface{}{"a"})
 	if err != nil {
-		return start, nil, err
+		return nil, err
 	}
 	_ = resp.Close()
-	return start, resp, nil
+	return resp, nil
 }
 
-func searchNotIndexedProperty(t *testing.T) (time.Time, gocb.QueryResults, error) {
-	start := time.Now()
+func searchNotIndexedProperty(t *testing.T) (gocb.QueryResults, error) {
 	resp, err := th.state.bucket.ExecuteN1qlQuery(gocb.NewN1qlQuery("select * from `company` where CONTAINS(billing_address_address_2, $1)"), []interface{}{"a"})
 	if err != nil {
-		return start, nil, err
+		return nil, err
 	}
 	_ = resp.Close()
-	return start, resp, nil
+	return resp, nil
 }
