@@ -121,12 +121,6 @@ func TestFetchDocIdentifier(t *testing.T) {
 	}
 }
 
-func TestCreateFTSIndex(t *testing.T) {
-	if err := createFullTextSearchIndex("order_fts_index", true, "order"); err != nil {
-		t.Error(err)
-	}
-}
-
 func TestCreateEmptyIndexExpectError(t *testing.T) {
 	if err := createFullTextSearchIndex("", true, "webshop"); err != ErrEmptyIndex {
 		t.Errorf("error should be %s instead of %s", ErrEmptyIndex, err)

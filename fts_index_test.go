@@ -10,7 +10,7 @@ import (
 )
 
 func TestCreateFullTextSearchIndex(t *testing.T) {
-	assert.Nil(t, createFullTextSearchIndex("order_fts_index", true, "product"))
+	assert.Nil(t, createFullTextSearchIndex("custom_fts_index", true, "custom"))
 }
 
 func TestDefaultFullTextSearchIndexDefinitionWithDocIDRegexp(t *testing.T) {
