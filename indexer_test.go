@@ -9,6 +9,7 @@ import (
 )
 
 func TestIndexCreate(t *testing.T) {
+	// @TODO hanging
 	type webshopWithNonPointerNestedStruct struct {
 		webshop
 		Something  string `json:"something" cb_indexable:"true"`
@@ -42,6 +43,7 @@ func TestPrimaryIndexCreateError(t *testing.T) {
 }
 
 func TestExistingIndex(t *testing.T) {
+	// @TODO hanging
 	if err := th.Index(context.Background(), webshop{}); err != nil {
 		t.Fatal(err)
 	}

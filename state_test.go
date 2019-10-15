@@ -1,7 +1,6 @@
 package bucket
 
 import (
-	"os"
 	"testing"
 
 	"github.com/rs/xid"
@@ -51,19 +50,6 @@ func TestValidateExpectError(t *testing.T) {
 	}
 	_ = th.state.updateState()
 
-}
-
-func TestSeedMockEnv(t *testing.T) {
-	test := os.Getenv("PKG_TEST")
-	var testing bool
-	if test == "testing" {
-		testing = true
-	}
-	os.Setenv("PKG_TEST", "testing")
-	seed()
-	if !testing {
-		os.Unsetenv("PKG_TEST")
-	}
 }
 
 func TestLoad(t *testing.T) {

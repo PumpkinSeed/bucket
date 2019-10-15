@@ -172,14 +172,14 @@ func DefaultFullTextSearchIndexDefinition(meta IndexMeta) (*IndexDefinition, err
 			DocIDPrefixDelimiter: meta.DocIDPrefixDelimiter,
 			Mode:                 "docid_prefix",
 			DocIDRegexp:          "",
-			TypeField:            "",
+			TypeField:            "type",
 		}
 	case meta.DocIDRegexp != "":
 		ftsDef.Params.DocConfig = IndexDocConfig{
 			DocIDPrefixDelimiter: "",
 			Mode:                 "docid_regexp",
 			DocIDRegexp:          meta.DocIDRegexp,
-			TypeField:            "",
+			TypeField:            "type",
 		}
 	case meta.TypeField != "":
 		ftsDef.Params.DocConfig = IndexDocConfig{

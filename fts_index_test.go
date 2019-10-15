@@ -58,7 +58,7 @@ func TestIndexCreationWithAllFieldSetup(t *testing.T) {
 		Name:                 indexName,
 		SourceType:           "couchbase",
 		SourceName:           "company",
-		TypeField:            "type_",
+		TypeField:            "type",
 		DocIDPrefixDelimiter: "::",
 	})
 	assert.Nil(t, err)
