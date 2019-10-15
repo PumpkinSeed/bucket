@@ -26,14 +26,14 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 			return 0, err
 		}
 		return h.state.bucket.Insert(documentID, ptr, ttl)
-	}, ttl, cas)
+	}, ttl, cas, "")
 	if err != nil {
 		return nil, "", err
 	}
 	return cas, id, nil
 }
 
-func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, *meta, error) {
+func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas, parent string) (string, *meta, error) {
 	if !h.state.inspect(typ) {
 		err := h.state.setType(typ, typ)
 		if err != nil {
@@ -42,6 +42,9 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 	}
 	fields := make(map[string]interface{})
 	metainfo := &meta{}
+	if parent != "" {
+		metainfo.Parent = parent
+	}
 
 	rvQ := reflect.ValueOf(q)
 	rtQ := rvQ.Type()
@@ -74,7 +77,8 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 					}
 					var imetainfo *meta
 					var err error
-					if _, imetainfo, err = h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas); err != nil {
+					p, _ := h.state.getDocumentKey(refTag, id)
+					if _, imetainfo, err = h.write(ctx, refTag, id, rvQField.Interface(), f, ttl, cas, p); err != nil {
 						return id, nil, err
 					}
 					if imetainfo != nil {
@@ -182,7 +186,7 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 			return 0, err
 		}
 		return h.state.bucket.Upsert(documentID, q, ttl)
-	}, ttl, cas)
+	}, ttl, cas, "")
 	if err != nil {
 		return nil, "", err
 	}

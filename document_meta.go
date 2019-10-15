@@ -10,6 +10,7 @@ type metaContainer struct {
 
 type meta struct {
 	ReferencedDocuments []referencedDocumentMeta `json:"referenced_documents"`
+	Parent              string                   `json:"parent"`
 }
 
 type referencedDocumentMeta struct {
