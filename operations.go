@@ -79,10 +79,10 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 						return id, nil, err
 					}
 					if imetainfo != nil {
-						metainfo.ReferencedDocuments = append(metainfo.ReferencedDocuments, imetainfo.ReferencedDocuments...)
+						metainfo.ChildDocuments = append(metainfo.ChildDocuments, imetainfo.ChildDocuments...)
 					}
 					dk, _ := h.state.getDocumentKey(refTag, id)
-					metainfo.AddReferencedDocument(dk, refTag, id)
+					metainfo.AddChildDocument(dk, refTag, id)
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJSON); ok {
 						fields[removeOmitempty(tag)] = rvQField.Interface()

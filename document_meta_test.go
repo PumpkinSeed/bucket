@@ -15,7 +15,7 @@ func TestGetMeta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(m.ReferencedDocuments[0].Key, "origin::") {
-		t.Errorf("Referenced first elem should contain 'origin::', instead of %s", m.ReferencedDocuments[0])
+	if !strings.Contains(m.ChildDocuments[0].Key, "origin::") {
+		t.Errorf("Referenced first elem should contain 'origin::', instead of %s", m.ChildDocuments[0])
 	}
 }
