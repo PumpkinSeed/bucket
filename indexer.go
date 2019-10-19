@@ -59,10 +59,9 @@ func makeIndex(manager *gocb.BucketManager, indexName string, indexedFields []st
 	if err := manager.CreateIndex(indexName, indexedFields, false, false); err != nil {
 		if err == gocb.ErrIndexAlreadyExists {
 			return dropAndCreateIndex(manager, indexName, indexedFields)
-		} else {
-			log.Printf("Error when create secondary index %+v", err)
-			return err
 		}
+		log.Printf("Error when create secondary index %+v", err)
+		return err
 	}
 	return nil
 }

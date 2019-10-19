@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	EventType   = "event"
-	ProfileType = "profile"
-	OrderType   = "order"
+	eventType   = "event"
+	profileType = "profile"
+	orderType   = "order"
 )
 
 var th *bucket.Handler
@@ -44,14 +44,14 @@ func main() {
 }
 
 func preloadAll() {
-	preload(ProfileType, func() interface{} {
+	preload(profileType, func() interface{} {
 		return models.GenerateProfile()
 	})
 
 	log.Println("Wait 2 seconds to get ready...")
 	time.Sleep(2 * time.Second)
 
-	preload(EventType, func() interface{} {
+	preload(eventType, func() interface{} {
 		_ = th.SetDocumentType(context.Background(), "event", "sim_event")
 		_ = th.SetDocumentType(context.Background(), "event_location", "sim_event_location")
 		_ = th.SetDocumentType(context.Background(), "event_photo", "sim_event_photo")
@@ -61,7 +61,7 @@ func preloadAll() {
 	log.Println("Wait 2 seconds to get ready...")
 	time.Sleep(2 * time.Second)
 
-	preload(OrderType, func() interface{} {
+	preload(orderType, func() interface{} {
 		return models.GenerateOrder()
 	})
 }
@@ -93,7 +93,7 @@ func profileSelection() {
 	log.Printf("Start inserting new profiles... \n")
 	for i := 0; i < quantity/2; i++ {
 		profile := models.GenerateProfile()
-		_, id, err := th.Insert(ctx, ProfileType, "", profile, 0)
+		_, id, err := th.Insert(ctx, profileType, "", profile, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -101,7 +101,7 @@ func profileSelection() {
 	}
 	for i := 0; i < quantity/2; i++ {
 		profile := models.GenerateProfile()
-		_, id, err := th.Upsert(ctx, ProfileType, "", profile, 0)
+		_, id, err := th.Upsert(ctx, profileType, "", profile, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -112,14 +112,14 @@ func profileSelection() {
 	upsertNum, removeNum := 0, 0
 	for i := 0; i < quantity; i++ {
 		profile := models.Profile{}
-		err := th.Get(ctx, ProfileType, ids[i], &profile)
+		err := th.Get(ctx, profileType, ids[i], &profile)
 		if err != nil {
 			log.Fatal(err)
 		}
 		if profile.AffiliationCount < uint64(affiliationLimit) {
 			profile.Status = models.GenerateStatus()
 			mes := time.Now()
-			_, _, err := th.Upsert(ctx, ProfileType, ids[i], profile, 0)
+			_, _, err := th.Upsert(ctx, profileType, ids[i], profile, 0)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -127,7 +127,7 @@ func profileSelection() {
 			upsertNum++
 		} else {
 			mes := time.Now()
-			err := th.Remove(ctx, ProfileType, ids[i], &profile)
+			err := th.Remove(ctx, profileType, ids[i], &profile)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -152,7 +152,7 @@ func profileLoad() {
 	start := time.Now()
 	for i := 0; i < quantity; i++ {
 		profile := models.GenerateProfile()
-		_, id, err := th.Insert(ctx, ProfileType, "", profile, 0)
+		_, id, err := th.Insert(ctx, profileType, "", profile, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -161,7 +161,7 @@ func profileLoad() {
 	for id, v := range profiles {
 		loadTime := time.Now()
 		profile := &models.Profile{}
-		if err := th.Get(ctx, ProfileType, id, profile); err != nil {
+		if err := th.Get(ctx, profileType, id, profile); err != nil {
 			log.Fatal(err)
 		}
 		loadTimeSum += int(time.Since(loadTime))
@@ -188,7 +188,7 @@ func touch() {
 
 	for i := 0; i < quantity; i++ {
 		order := models.GenerateOrder()
-		_, id, err := th.Insert(ctx, OrderType, "", order, timeToLive)
+		_, id, err := th.Insert(ctx, orderType, "", order, timeToLive)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -200,7 +200,7 @@ func touch() {
 	var newStore = make(map[string]*models.Order)
 	for id, v := range store {
 		if c%2 == 0 {
-			err := th.Touch(ctx, OrderType, id, v, 0)
+			err := th.Touch(ctx, orderType, id, v, 0)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -215,7 +215,7 @@ func touch() {
 
 	var results []string
 	for id, v := range newStore {
-		err := th.Get(ctx, OrderType, id, v)
+		err := th.Get(ctx, orderType, id, v)
 		if err != nil {
 			log.Fatal(err)
 		}
