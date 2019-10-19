@@ -22,6 +22,7 @@ func (h *Handler) Get(ctx context.Context, typ, id string, ptr interface{}) erro
 	return h.state.bucket.Do(ops)
 }
 
+// GetAndTouch retrieves a document and simultaneously updates its expiry times
 func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface{}, ttl uint32) error {
 	kv, err := h.get(ctx, typ, id, ptr)
 	if err != nil {
