@@ -2,6 +2,7 @@ package bucket
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/couchbase/gocb"
@@ -19,7 +20,7 @@ func (h *Handler) EInsert(ctx context.Context, typ, id string, q interface{}, tt
 	for k, v := range kv {
 		key, err := h.state.getDocumentKey(k, id)
 		if err != nil {
-			//return nil, "", err
+			return nil, "", err
 		}
 		ops = append(ops, &gocb.InsertOp{Key: key, Value: v, Expiry: ttl})
 	}
@@ -56,7 +57,8 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 			}
 			subDocuments := h.getSubDocuments(tag, id, rvField.Interface(), &current)
 			for k, v := range subDocuments {
-				childKey, _ := h.state.getDocumentKey(tag, id)
+				childKey, _ := h.state.getDocumentKey(k, id)
+				fmt.Println(childKey)
 				metaField.AddChildDocument(childKey, k, id)
 				documents[k] = v
 			}

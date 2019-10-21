@@ -86,7 +86,9 @@ func (s *state) getType(name string) (string, error) {
 	if v, ok := s.DocumentTypes[name]; ok {
 		return v, nil
 	}
-	return "", ErrDocumentTypeDoesntExists
+	s.DocumentTypes[name] = name + s.configuration.Separator
+	return s.DocumentTypes[name], nil
+	// return "", ErrDocumentTypeDoesntExists
 }
 
 func (s *state) fetchDocumentIdentifier(documentKey string) string {
