@@ -3,6 +3,7 @@ package bucket
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 
@@ -14,8 +15,8 @@ const (
 )
 
 // SetDocumentType adds the type of the given field to the state
-func (h *Handler) SetDocumentType(ctx context.Context, name, prefix string) error {
-	return h.state.setType(name, prefix)
+func (h *Handler) SetDocumentType(ctx context.Context, name, prefix string) {
+	h.state.setType(name, prefix)
 }
 
 type state struct {
@@ -68,25 +69,25 @@ func (s *state) inspect(name string) bool {
 	return ok
 }
 
-func (s *state) setType(name, prefix string) error {
+func (s *state) setType(name, prefix string) {
 	s.Lock()
 	defer s.Unlock()
 	s.DocumentTypes[name] = prefix + s.configuration.Separator
-	err := s.updateState()
-	if err != nil {
-		return err
-	}
+	if err := s.updateState(); err != nil {
+		log.Print(err)
+	} // @TODO make it goroutine
 
-	return nil
+	return
 }
 
-func (s *state) getType(name string) (string, error) {
-	s.RLock()
-	defer s.RUnlock()
+func (s *state) getType(name string) string {
+	s.Lock()
+	defer s.Unlock()
 	if v, ok := s.DocumentTypes[name]; ok {
-		return v, nil
+		return v
 	}
-	return "", ErrDocumentTypeDoesntExists
+	s.DocumentTypes[name] = name + s.configuration.Separator
+	return s.DocumentTypes[name]
 }
 
 func (s *state) fetchDocumentIdentifier(documentKey string) string {
@@ -98,12 +99,9 @@ func (s *state) fetchDocumentIdentifier(documentKey string) string {
 	return ""
 }
 
-func (s *state) getDocumentKey(name, id string) (string, error) {
-	typ, err := s.getType(name)
-	if err != nil {
-		return "", err
-	}
-	return typ + id, nil
+func (s *state) getDocumentKey(name, id string) string {
+	typ := s.getType(name)
+	return typ + id
 }
 
 func (s *state) deleteType(name string) error {

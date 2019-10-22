@@ -22,10 +22,7 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 		id = xid.New().String()
 	}
 	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return 0, err
-		}
+		documentID := h.state.getDocumentKey(typ, id)
 		return h.state.bucket.Insert(documentID, ptr, ttl)
 	}, ttl, cas)
 	if err != nil {
@@ -36,10 +33,7 @@ func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl
 
 func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, *meta, error) {
 	if !h.state.inspect(typ) {
-		err := h.state.setType(typ, typ)
-		if err != nil {
-			return "", nil, err
-		}
+		h.state.setType(typ, typ)
 	}
 	fields := make(map[string]interface{})
 	metainfo := &meta{}
@@ -81,7 +75,7 @@ func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f wr
 					if imetainfo != nil {
 						metainfo.ChildDocuments = append(metainfo.ChildDocuments, imetainfo.ChildDocuments...)
 					}
-					dk, _ := h.state.getDocumentKey(refTag, id)
+					dk := h.state.getDocumentKey(refTag, id)
 					metainfo.AddChildDocument(dk, refTag, id)
 				} else {
 					if tag, ok := rtQField.Tag.Lookup(tagJSON); ok {
@@ -106,10 +100,7 @@ func (h *Handler) Remove(ctx context.Context, typ, id string, ptr interface{}) e
 	}
 
 	for _, typ := range typs {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return err
-		}
+		documentID := h.state.getDocumentKey(typ, id)
 		if _, err := h.state.bucket.Remove(documentID, 0); err != nil {
 			return err
 		}
@@ -124,10 +115,7 @@ func (h *Handler) Upsert(ctx context.Context, typ, id string, q interface{}, ttl
 		id = xid.New().String()
 	}
 	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, q interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return 0, err
-		}
+		documentID := h.state.getDocumentKey(typ, id)
 		return h.state.bucket.Upsert(documentID, q, ttl)
 	}, ttl, cas)
 	if err != nil {
@@ -146,10 +134,7 @@ func (h *Handler) Touch(ctx context.Context, typ, id string, ptr interface{}, tt
 	}
 
 	for _, typ := range typs {
-		documentID, err := h.state.getDocumentKey(typ, id)
-		if err != nil {
-			return err
-		}
+		documentID := h.state.getDocumentKey(typ, id)
 		if _, err := h.state.bucket.Touch(documentID, 0, ttl); err != nil {
 			return err
 		}

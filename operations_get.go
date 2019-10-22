@@ -37,10 +37,6 @@ func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface
 }
 
 func (h *Handler) get(ctx context.Context, typ, id string, ptr interface{}) (map[documentMeta]interface{}, error) {
-	if _, err := h.state.getDocumentKey(typ, id); err != nil {
-		return nil, err
-	}
-
 	// checks for invalid input, ptr must be a pointer
 	if err := h.inputcheck(ptr); err != nil {
 		return nil, err
@@ -81,10 +77,7 @@ func (h *Handler) inputcheck(ptr interface{}) error {
 // getAllMeta read the document meta field and
 func (h *Handler) availableDocuments(tx context.Context, typ, id string, ptr interface{}) (map[documentMeta]interface{}, error) {
 	var kv = make(map[documentMeta]interface{})
-	dk, err := h.state.getDocumentKey(typ, id)
-	if err != nil {
-		return nil, err
-	}
+	dk := h.state.getDocumentKey(typ, id)
 
 	key := documentMeta{
 		Key:  dk,

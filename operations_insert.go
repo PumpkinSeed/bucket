@@ -17,15 +17,12 @@ func (h *Handler) EInsert(ctx context.Context, typ, id string, q interface{}, tt
 
 	var ops []gocb.BulkOp
 	for k, v := range kv {
-		key, err := h.state.getDocumentKey(k, id)
-		if err != nil {
-			//return nil, "", err
-		}
+		key := h.state.getDocumentKey(k, id)
 		ops = append(ops, &gocb.InsertOp{Key: key, Value: v, Expiry: ttl})
 	}
 
 	err := h.state.bucket.Do(ops)
-	return nil, "", err
+	return nil, id, err
 }
 
 func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documentMeta) map[string]map[string]interface{} {
@@ -48,7 +45,8 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 		rvField := rv.Field(i)
 		rtField := rt.Field(i)
 		if tag, ok := rtField.Tag.Lookup(tagReferenced); ok {
-			currentKey, _ := h.state.getDocumentKey(typ, id)
+			documents = h.buildDocuments(typ, id, tag, rvField.Interface(), metaField)
+			currentKey := h.state.getDocumentKey(typ, id)
 			current := documentMeta{
 				Type: typ,
 				ID:   id,
@@ -56,7 +54,7 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 			}
 			subDocuments := h.getSubDocuments(tag, id, rvField.Interface(), &current)
 			for k, v := range subDocuments {
-				childKey, _ := h.state.getDocumentKey(tag, id)
+				childKey := h.state.getDocumentKey(k, id)
 				metaField.AddChildDocument(childKey, k, id)
 				documents[k] = v
 			}
@@ -68,6 +66,24 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 	}
 	fields[metaFieldName] = metaField
 	documents[typ] = fields
+
+	return documents
+}
+
+func (h *Handler) buildDocuments(typ, id, tag string, sub interface{}, metaField *meta) map[string]map[string]interface{} {
+	var documents = make(map[string]map[string]interface{})
+	currentKey := h.state.getDocumentKey(typ, id)
+	current := documentMeta{
+		Type: typ,
+		ID:   id,
+		Key:  currentKey,
+	}
+	subDocuments := h.getSubDocuments(tag, id, sub, &current)
+	for k, v := range subDocuments {
+		childKey := h.state.getDocumentKey(k, id)
+		metaField.AddChildDocument(childKey, k, id)
+		documents[k] = v
+	}
 
 	return documents
 }

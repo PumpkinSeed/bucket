@@ -52,9 +52,9 @@ func preloadAll() {
 	time.Sleep(2 * time.Second)
 
 	preload(EventType, func() interface{} {
-		_ = th.SetDocumentType(context.Background(), "event", "sim_event")
-		_ = th.SetDocumentType(context.Background(), "event_location", "sim_event_location")
-		_ = th.SetDocumentType(context.Background(), "event_photo", "sim_event_photo")
+		th.SetDocumentType(context.Background(), "event", "sim_event")
+		th.SetDocumentType(context.Background(), "event_location", "sim_event_location")
+		th.SetDocumentType(context.Background(), "event_photo", "sim_event_photo")
 		return models.GenerateEvent()
 	})
 

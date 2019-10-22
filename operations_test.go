@@ -213,18 +213,6 @@ func TestTouch(t *testing.T) {
 	}
 }
 
-func TestTouchDocumentTypeNotFoundExpectError(t *testing.T) {
-	ws, ID, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = th.state.deleteType("product")
-
-	if err := th.Touch(context.Background(), "webshop", ID, &ws, 10); err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
 func TestTouchNonPointerInputExpectError(t *testing.T) {
 	ws, ID, err := testInsert()
 	if err != nil {
@@ -376,21 +364,6 @@ func TestRemoveInvalidInput(t *testing.T) {
 	}
 }
 
-func TestRemoveDocumentKeyNotFoundExpectError(t *testing.T) {
-	_, id, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = th.state.deleteType("product")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = th.Remove(context.Background(), "webshop", id, &webshop{})
-	if err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
 func TestRemoveDocumentDoesntExist(t *testing.T) {
 	_, id, err := testInsert()
 	if err != nil {
@@ -403,7 +376,6 @@ func TestRemoveDocumentDoesntExist(t *testing.T) {
 		t.Errorf("error should be %s instead of %s", gocb.ErrKeyNotFound, err)
 
 	}
-
 }
 
 func BenchmarkInsertEmb(b *testing.B) {

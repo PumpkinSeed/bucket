@@ -22,11 +22,9 @@ type documentMeta struct {
 
 func (h *Handler) getMeta(typ, id string) (*meta, error) {
 	var c = metaContainer{}
-	dk, err := h.state.getDocumentKey(typ, id)
-	if err != nil {
-		return nil, err
-	}
-	_, err = h.state.bucket.Get(dk, &c)
+	dk := h.state.getDocumentKey(typ, id)
+
+	_, err := h.state.bucket.Get(dk, &c)
 	if err != nil {
 		return nil, err
 	}

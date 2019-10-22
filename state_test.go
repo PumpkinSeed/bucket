@@ -20,10 +20,7 @@ func TestUpdateState(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = s.setType("cache", "cache")
-	if err != nil {
-		t.Fatal(err)
-	}
+	s.setType("cache", "cache")
 
 	var s2 state
 	_, err = s.bucket.Get(stateDocumentKey, &s2)
@@ -74,7 +71,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestInspect(t *testing.T) {
-	_ = th.state.setType("tsinspect", "tsinspect")
+	th.state.setType("tsinspect", "tsinspect")
 	if b := th.state.inspect("tsinspect"); !b {
 		t.Error("type not found")
 	}
@@ -83,9 +80,7 @@ func TestInspect(t *testing.T) {
 }
 
 func TestSetType(t *testing.T) {
-	if err := th.state.setType("webshop", "webshop"); err != nil {
-		t.Error(err)
-	}
+	th.state.setType("webshop", "webshop")
 }
 
 func TestDeleteType(t *testing.T) {
@@ -93,7 +88,7 @@ func TestDeleteType(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	_ = th.state.setType("webshop", "webshop")
+	th.state.setType("webshop", "webshop")
 }
 
 func TestDeleteTypeErrDocumentTypeDoesntExists(t *testing.T) {
@@ -105,7 +100,7 @@ func TestDeleteTypeErrDocumentTypeDoesntExists(t *testing.T) {
 	if err != ErrDocumentTypeDoesntExists {
 		t.Error(err)
 	}
-	_ = th.state.setType("webshop", "webshop")
+	th.state.setType("webshop", "webshop")
 }
 
 func TestFetchDocIdentifierEmptyDocumentKey(t *testing.T) {
