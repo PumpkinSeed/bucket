@@ -10,10 +10,11 @@ import (
 )
 
 func TestGetBulk(t *testing.T) {
+	const webshopStatus = "success"
 	for i := 0; i < 10; i++ {
 		ws := generate()
+		ws.Status = "success"
 		_, _, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws, 0)
-		//_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -23,9 +24,8 @@ func TestGetBulk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	searchMatch := "processed"
 	res, err := th.SimpleSearch(context.Background(), "webshop_fts_idx", &SearchQuery{
-		Query: searchMatch,
+		Query: webshopStatus,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +37,7 @@ func TestGetBulk(t *testing.T) {
 		t.Error(err)
 	}
 	if len(ws) > 0 {
-		assert.Equal(t, "processed", ws[0].Status)
+		assert.Equal(t, webshopStatus, ws[0].Status)
 		assert.Equal(t, "Free shipping", ws[0].ShippingMethod)
 		assert.Equal(t, "active", ws[0].Product.Status)
 		assert.Equal(t, "productshop", ws[0].Store.Name)

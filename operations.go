@@ -15,22 +15,7 @@ type writerF func(string, string, interface{}, uint32) (gocb.Cas, error)
 // Cas is the container of Cas operation of all documents
 type Cas map[string]gocb.Cas
 
-// Insert inserts a new record into couchbase bucket
-func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
-	cas := make(map[string]gocb.Cas)
-	if id == "" {
-		id = xid.New().String()
-	}
-	id, _, err := h.write(ctx, typ, id, q, func(typ, id string, ptr interface{}, ttl uint32) (gocb.Cas, error) {
-		documentID := h.state.getDocumentKey(typ, id)
-		return h.state.bucket.Insert(documentID, ptr, ttl)
-	}, ttl, cas)
-	if err != nil {
-		return nil, "", err
-	}
-	return cas, id, nil
-}
-
+// TODO rewrite upsert
 func (h *Handler) write(ctx context.Context, typ, id string, q interface{}, f writerF, ttl uint32, cas Cas) (string, *meta, error) {
 	if !h.state.inspect(typ) {
 		h.state.setType(typ, typ)

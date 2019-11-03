@@ -8,7 +8,7 @@ import (
 	"github.com/rs/xid"
 )
 
-func (h *Handler) EInsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
+func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	if id == "" {
 		id = xid.New().String()
 	}
@@ -36,6 +36,9 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 	var rt = rv.Type()
 
 	if rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return documents
+		}
 		rv = reflect.Indirect(rv)
 		rt = rv.Type()
 	}
@@ -45,22 +48,10 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 		rvField := rv.Field(i)
 		rtField := rt.Field(i)
 		if tag, ok := rtField.Tag.Lookup(tagReferenced); ok {
-			documents = h.buildDocuments(typ, id, tag, rvField.Interface(), metaField)
-			currentKey := h.state.getDocumentKey(typ, id)
-			current := documentMeta{
-				Type: typ,
-				ID:   id,
-				Key:  currentKey,
-			}
-			subDocuments := h.getSubDocuments(tag, id, rvField.Interface(), &current)
-			for k, v := range subDocuments {
-				childKey := h.state.getDocumentKey(k, id)
-				metaField.AddChildDocument(childKey, k, id)
-				documents[k] = v
-			}
+			h.buildDocuments(typ, id, tag, rvField.Interface(), metaField, documents)
 		} else {
 			if j, ok := rtField.Tag.Lookup(tagJSON); ok && j != "-" {
-				fields[j] = rvField.Interface()
+				fields[removeOmitempty(j)] = rvField.Interface()
 			}
 		}
 	}
@@ -70,8 +61,7 @@ func (h *Handler) getSubDocuments(typ, id string, q interface{}, parent *documen
 	return documents
 }
 
-func (h *Handler) buildDocuments(typ, id, tag string, sub interface{}, metaField *meta) map[string]map[string]interface{} {
-	var documents = make(map[string]map[string]interface{})
+func (h *Handler) buildDocuments(typ, id, tag string, sub interface{}, metaField *meta, documents map[string]map[string]interface{}) {
 	currentKey := h.state.getDocumentKey(typ, id)
 	current := documentMeta{
 		Type: typ,
@@ -84,6 +74,4 @@ func (h *Handler) buildDocuments(typ, id, tag string, sub interface{}, metaField
 		metaField.AddChildDocument(childKey, k, id)
 		documents[k] = v
 	}
-
-	return documents
 }
