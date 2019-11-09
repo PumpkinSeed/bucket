@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/volatiletech/null"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -101,4 +103,151 @@ func TestIndexCreationWithAllFieldSetup(t *testing.T) {
 	indJSON, _ := json.Marshal(ind)
 	defindex, _ := json.Marshal(def)
 	assert.JSONEq(t, string(defindex), string(indJSON))
+}
+
+func TestHandler_indexStat(t *testing.T) {
+	type args struct {
+		indexName string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		want        *IndexStat
+		wantErr     bool
+		createIndex bool
+		ctx         context.Context
+	}{
+		{
+			name: "Missing index",
+			ctx:  context.Background(),
+			args: args{
+				indexName: "noname_random_index",
+			},
+			want: &IndexStat{
+				Status:  null.StringFrom("fail"),
+				Error:   null.StringFrom("rest_auth: preparePerms, err: index not found"),
+				Request: null.StringFrom(""),
+			},
+			wantErr: false,
+		},
+		{
+			name: "Currently created",
+			args: args{
+				indexName: "existing_index",
+			},
+			want: &IndexStat{
+				DocCount: null.UintFrom(0),
+			},
+			wantErr:     false,
+			createIndex: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.createIndex {
+				indexDef, _ := DefaultFullTextSearchIndexDefinition(IndexMeta{
+					Name:                 tt.args.indexName,
+					SourceType:           "couchbase",
+					SourceName:           "company",
+					DocIDPrefixDelimiter: "::",
+					TypeField:            "type",
+				})
+				_ = th.CreateFullTextSearchIndex(tt.ctx, indexDef)
+				time.Sleep(1 * time.Second)
+			}
+			got, err := th.indexStat(tt.ctx, tt.args.indexName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("indexStat() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if got == nil {
+				t.Fatal("missing response")
+			}
+			assert.NotNil(t, tt.want)
+			assert.Equal(t, tt.want.Error.String, got.Error.String)
+			assert.Equal(t, tt.want.Status.String, got.Status.String)
+			assert.Equal(t, tt.want.Request.String, got.Request.String)
+			assert.Equal(t, tt.want.DocCount.Valid, got.DocCount.Valid)
+
+			if tt.createIndex {
+				_ = th.DeleteFullTextSearchIndex(tt.ctx, tt.args.indexName)
+			}
+		})
+	}
+}
+
+func TestHandler_countIndex(t *testing.T) {
+	type args struct {
+		indexName string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		want        *IndexCount
+		wantErr     bool
+		createIndex bool
+		ctx         context.Context
+	}{
+		{
+			name: "Missing index",
+			args: args{
+				indexName: "noname_random_index",
+			},
+			want: &IndexCount{
+				Status:  "fail",
+				Error:   null.StringFrom("rest_auth: preparePerms, err: index not found"),
+				Request: null.StringFrom(""),
+			},
+			wantErr:     false,
+			createIndex: false,
+			ctx:         context.Background(),
+		},
+		{
+			name: "Currently created",
+			args: args{
+				indexName: "existing_index",
+			},
+			want: &IndexCount{
+				Status: "ok",
+				Count:  null.UintFrom(0),
+			},
+			wantErr:     false,
+			createIndex: true,
+			ctx:         context.Background(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.createIndex {
+				indexDef, _ := DefaultFullTextSearchIndexDefinition(IndexMeta{
+					Name:                 tt.args.indexName,
+					SourceType:           "couchbase",
+					SourceName:           "company",
+					DocIDPrefixDelimiter: "::",
+					TypeField:            "type",
+				})
+				_ = th.CreateFullTextSearchIndex(tt.ctx, indexDef)
+				time.Sleep(1 * time.Second)
+			}
+
+			got, err := th.countIndex(tt.ctx, tt.args.indexName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("countIndex() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got == nil {
+				t.Fatal("missing response")
+			}
+			assert.NotNil(t, tt.want)
+			assert.Equal(t, tt.want.Status, got.Status)
+			assert.Equal(t, tt.want.Error.String, got.Error.String)
+			assert.Equal(t, tt.want.Request.String, got.Request.String)
+			assert.Equal(t, tt.want.Count.Valid, got.Count.Valid)
+
+			if tt.createIndex {
+				_ = th.DeleteFullTextSearchIndex(tt.ctx, tt.args.indexName)
+			}
+		})
+	}
 }
