@@ -250,8 +250,9 @@ func createFullTextSearchIndexWithDocFields(indexName string, deleteOnExists boo
 }
 func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype string) error {
 	var ok bool
-	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
-		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
+	ctx := context.Background()
+	if ok, _, _ = th.InspectFullTextSearchIndex(ctx, indexName); ok && deleteOnExists {
+		err := th.DeleteFullTextSearchIndex(ctx, indexName)
 		if err != nil {
 			return err
 		}
@@ -277,9 +278,26 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype st
 		if err != nil {
 			return err
 		}
-		err = th.CreateFullTextSearchIndex(context.Background(), def)
+		err = th.CreateFullTextSearchIndex(ctx, def)
 		if err != nil {
 			return err
+		}
+
+		for true {
+			count, _ := th.countIndex(ctx, indexName)
+			stat, _ := th.indexStat(ctx, indexName)
+			if !count.Count.Valid || !stat.DocCount.Valid {
+				log.Println("count or stat invalid")
+				time.Sleep(10 * time.Millisecond)
+			}
+			if count.Count.Uint > 0 {
+				if stat.DocCount.Uint != count.Count.Uint {
+					log.Printf("count is %d\n stat is %d\n", count.Count.Uint, stat.DocCount.Uint)
+					time.Sleep(10 * time.Millisecond)
+				} else {
+					break
+				}
+			}
 		}
 	}
 
