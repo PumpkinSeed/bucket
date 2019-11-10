@@ -287,12 +287,12 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype st
 			count, _ := th.countIndex(ctx, indexName)
 			stat, _ := th.indexStat(ctx, indexName)
 			if !count.Count.Valid || !stat.DocCount.Valid {
-				log.Println("count or stat invalid")
+				log.Printf("%s count[%v] or stat invalid[%v]\n", indexName, count.Count.Valid, stat.DocCount.Valid)
 				time.Sleep(10 * time.Millisecond)
 			}
 			if count.Count.Uint > 0 {
 				if stat.DocCount.Uint != count.Count.Uint {
-					log.Printf("count is %d\n stat is %d\n", count.Count.Uint, stat.DocCount.Uint)
+					log.Printf("%s count is %d\n stat is %d\n", indexName, count.Count.Uint, stat.DocCount.Uint)
 					time.Sleep(10 * time.Millisecond)
 				} else {
 					break
