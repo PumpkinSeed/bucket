@@ -92,8 +92,6 @@ func TestIndexCreationWithAllFieldSetup(t *testing.T) {
 		assert.Nil(t, th.CreateFullTextSearchIndex(context.Background(), def))
 	}
 
-	time.Sleep(2 * time.Second)
-
 	_, ind, err := th.InspectFullTextSearchIndex(context.Background(), indexName)
 	if err != nil {
 		t.Fatal(err)

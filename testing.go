@@ -281,21 +281,25 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype st
 			return err
 		}
 
-		for {
-			count, _ := th.countIndex(ctx, indexName)
-			stat, _ := th.indexStat(ctx, indexName)
-			if !count.Count.Valid || !stat.DocCount.Valid {
-				time.Sleep(10 * time.Millisecond)
-			}
-			if count.Count.Uint > 0 {
-				if stat.DocCount.Uint != count.Count.Uint {
-					time.Sleep(10 * time.Millisecond)
-				} else {
-					break
-				}
-			}
-		}
+		waitUntilFtsIndexCompleted(ctx, indexName)
 	}
 
 	return nil
+}
+
+func waitUntilFtsIndexCompleted(ctx context.Context, indexName string) {
+	for {
+		count, _ := th.countIndex(ctx, indexName)
+		stat, _ := th.indexStat(ctx, indexName)
+		if !count.Count.Valid || !stat.DocCount.Valid {
+			time.Sleep(10 * time.Millisecond)
+		}
+		if count.Count.Uint > 0 {
+			if stat.DocCount.Uint != count.Count.Uint {
+				time.Sleep(10 * time.Millisecond)
+			} else {
+				break
+			}
+		}
+	}
 }

@@ -18,6 +18,8 @@ func TestGetBulk(t *testing.T) {
 		}
 	}
 
+	waitUntilFtsIndexCompleted(context.Background(), "webshop_fts_index")
+
 	searchMatch := "processed"
 	res, err := th.SimpleSearch(context.Background(), "webshop_fts_index", &SearchQuery{
 		Query: searchMatch,
