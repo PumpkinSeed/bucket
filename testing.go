@@ -37,7 +37,6 @@ func seed() {
 	createFullTextSearchIndex("product_fts_index", false, "product")
 	createFullTextSearchIndex("store_fts_index", false, "store")
 	createFullTextSearchIndex("order_fts_idx", false, "order")
-	time.Sleep(1 * time.Second)
 
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
@@ -57,7 +56,6 @@ func seed() {
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
 	}
-	time.Sleep(5 * time.Second)
 }
 
 // webshop is a struct used for testing and represents an order of a webshop
@@ -283,16 +281,14 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype st
 			return err
 		}
 
-		for true {
+		for {
 			count, _ := th.countIndex(ctx, indexName)
 			stat, _ := th.indexStat(ctx, indexName)
 			if !count.Count.Valid || !stat.DocCount.Valid {
-				log.Printf("%s count[%v] or stat invalid[%v]\n", indexName, count.Count.Valid, stat.DocCount.Valid)
 				time.Sleep(10 * time.Millisecond)
 			}
 			if count.Count.Uint > 0 {
 				if stat.DocCount.Uint != count.Count.Uint {
-					log.Printf("%s count is %d\n stat is %d\n", indexName, count.Count.Uint, stat.DocCount.Uint)
 					time.Sleep(10 * time.Millisecond)
 				} else {
 					break
@@ -300,9 +296,6 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype st
 			}
 		}
 	}
-
-	// NOTE: Sleep because most of the tests want to use this index, so it should wait for
-	//time.Sleep(5 * time.Second)
 
 	return nil
 }
