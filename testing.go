@@ -33,6 +33,11 @@ func seed() {
 	th.SetDocumentType(context.Background(), "product", "product")
 	th.SetDocumentType(context.Background(), "store", "store")
 
+	createFullTextSearchIndex("webshop_fts_index", false, "webshop")
+	createFullTextSearchIndex("product_fts_index", false, "product")
+	createFullTextSearchIndex("store_fts_index", false, "store")
+	createFullTextSearchIndex("order_fts_idx", false, "order")
+
 	var test = os.Getenv("PKG_TEST")
 	if test == "testing" && !seeded {
 		log.Print("TestEnv")
@@ -182,7 +187,7 @@ func generate() webshop {
 	}
 }
 
-func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
+func createFullTextSearchIndexWithDocFields(indexName string, deleteOnExists bool, doctype, fieldname, fieldtype string) error {
 	var ok bool
 	if ok, _, _ = th.InspectFullTextSearchIndex(context.Background(), indexName); ok && deleteOnExists {
 		err := th.DeleteFullTextSearchIndex(context.Background(), indexName)
@@ -197,7 +202,36 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 			SourceType:           "couchbase",
 			SourceName:           "company",
 			DocIDPrefixDelimiter: "::",
+			TypeField:            "",
 		})
+		if def == nil {
+			return err
+		}
+		def.Params.Mapping.Types = map[string]IndexType{
+			doctype: {
+				Dynamic:         false,
+				Enabled:         true,
+				DefaultAnalyzer: "web",
+				Properties: map[string]IndexProperties{
+					fieldname: {
+						Dynamic: false,
+						Enabled: true,
+						Fields: []IndexField{{
+							Analyzer:           "web",
+							IncludeInAll:       true,
+							IncludeTermVectors: true,
+							Index:              true,
+							Name:               fieldname,
+							Store:              false,
+							Type:               "text",
+						}},
+					},
+				},
+			},
+		}
+		if fieldtype != "" {
+			def.Params.Mapping.Types[doctype].Properties[fieldname].Fields[0].Type = fieldtype
+		}
 		if err != nil {
 			return err
 		}
@@ -211,4 +245,61 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool) error {
 	time.Sleep(5 * time.Second)
 
 	return nil
+}
+func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype string) error {
+	var ok bool
+	ctx := context.Background()
+	if ok, _, _ = th.InspectFullTextSearchIndex(ctx, indexName); ok && deleteOnExists {
+		err := th.DeleteFullTextSearchIndex(ctx, indexName)
+		if err != nil {
+			return err
+		}
+	}
+
+	if !ok {
+		def, err := DefaultFullTextSearchIndexDefinition(IndexMeta{
+			Name:                 indexName,
+			SourceType:           "couchbase",
+			SourceName:           "company",
+			DocIDPrefixDelimiter: "::",
+			TypeField:            "",
+		})
+		if def == nil {
+			return err
+		}
+		def.Params.Mapping.Types = map[string]IndexType{
+			doctype: {
+				Dynamic: true,
+				Enabled: true,
+			},
+		}
+		if err != nil {
+			return err
+		}
+		err = th.CreateFullTextSearchIndex(ctx, def)
+		if err != nil {
+			return err
+		}
+
+		waitUntilFtsIndexCompleted(ctx, indexName)
+	}
+
+	return nil
+}
+
+func waitUntilFtsIndexCompleted(ctx context.Context, indexName string) {
+	for {
+		count, _ := th.CountIndex(ctx, indexName)
+		stat, _ := th.IndexStat(ctx, indexName)
+		if !count.Count.Valid || !stat.DocCount.Valid {
+			time.Sleep(10 * time.Millisecond)
+		}
+		if count.Count.Uint > 0 {
+			if stat.DocCount.Uint != count.Count.Uint {
+				time.Sleep(10 * time.Millisecond)
+			} else {
+				break
+			}
+		}
+	}
 }
