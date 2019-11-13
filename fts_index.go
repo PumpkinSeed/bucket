@@ -309,7 +309,7 @@ func (h *Handler) fullTextSearchURL(ctx context.Context, indexName string) strin
 	return fmt.Sprintf("%s%s/%s", h.httpAddress, ftsEndpoint, indexName)
 }
 
-func (h *Handler) countIndex(ctx context.Context, indexName string) (*IndexCount, error) {
+func (h *Handler) CountIndex(ctx context.Context, indexName string) (*IndexCount, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/index/%s/count", statAddress, indexName), nil)
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")
@@ -332,7 +332,7 @@ func (h *Handler) countIndex(ctx context.Context, indexName string) (*IndexCount
 	return &indexCount, nil
 }
 
-func (h *Handler) indexStat(ctx context.Context, indexName string) (*IndexStat, error) {
+func (h *Handler) IndexStat(ctx context.Context, indexName string) (*IndexStat, error) {
 	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/api/stats/sourceStats/%s", statAddress, indexName), nil)
 	setupBasicAuth(req)
 	req.Header.Add("Content-Type", "application/json")

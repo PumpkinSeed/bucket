@@ -153,9 +153,9 @@ func TestHandler_indexStat(t *testing.T) {
 				_ = th.CreateFullTextSearchIndex(tt.ctx, indexDef)
 				time.Sleep(1 * time.Second)
 			}
-			got, err := th.indexStat(tt.ctx, tt.args.indexName)
+			got, err := th.IndexStat(tt.ctx, tt.args.indexName)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("indexStat() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("IndexStat() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
@@ -229,9 +229,9 @@ func TestHandler_countIndex(t *testing.T) {
 				time.Sleep(1 * time.Second)
 			}
 
-			got, err := th.countIndex(tt.ctx, tt.args.indexName)
+			got, err := th.CountIndex(tt.ctx, tt.args.indexName)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("countIndex() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CountIndex() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got == nil {

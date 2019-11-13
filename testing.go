@@ -289,8 +289,8 @@ func createFullTextSearchIndex(indexName string, deleteOnExists bool, doctype st
 
 func waitUntilFtsIndexCompleted(ctx context.Context, indexName string) {
 	for {
-		count, _ := th.countIndex(ctx, indexName)
-		stat, _ := th.indexStat(ctx, indexName)
+		count, _ := th.CountIndex(ctx, indexName)
+		stat, _ := th.IndexStat(ctx, indexName)
 		if !count.Count.Valid || !stat.DocCount.Valid {
 			time.Sleep(10 * time.Millisecond)
 		}
