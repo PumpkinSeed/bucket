@@ -13,18 +13,15 @@ func TestGetBulk(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		ws := generate()
 		_, _, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws, 0)
-		//_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false); err != nil {
-		t.Fatal(err)
-	}
+	waitUntilFtsIndexCompleted(context.Background(), "webshop_fts_index")
 
 	searchMatch := "processed"
-	res, err := th.SimpleSearch(context.Background(), "webshop_fts_idx", &SearchQuery{
+	res, err := th.SimpleSearch(context.Background(), "webshop_fts_index", &SearchQuery{
 		Query: searchMatch,
 	})
 	if err != nil {
@@ -57,7 +54,7 @@ func BenchmarkGetBulk(b *testing.B) {
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false); err != nil {
+	if err := createFullTextSearchIndex("webshop_fts_index", false, "webshop"); err != nil {
 		b.Fatal(err)
 	}
 
