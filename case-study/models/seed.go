@@ -9,6 +9,7 @@ import (
 	"github.com/rs/xid"
 )
 
+// GenerateProfile ...
 func GenerateProfile() *Profile {
 	return &Profile{
 		AboutMe:           gofakeit.HipsterSentence(10),
@@ -40,6 +41,7 @@ func GenerateProfile() *Profile {
 	}
 }
 
+// GenerateEvent ...
 func GenerateEvent() *Event {
 	return &Event{
 		Description: gofakeit.HipsterSentence(10),
@@ -54,6 +56,7 @@ func GenerateEvent() *Event {
 	}
 }
 
+// GenerateStatus ...
 func GenerateStatus() *Status {
 	return &Status{
 		Status:     gofakeit.HackerAdjective(),
@@ -61,6 +64,7 @@ func GenerateStatus() *Status {
 	}
 }
 
+// GenerateSchool ...
 func GenerateSchool() *School {
 	return &School{
 		Concentrations: []string{gofakeit.HackerAdjective()},
@@ -69,6 +73,7 @@ func GenerateSchool() *School {
 	}
 }
 
+// GenerateLocation ...
 func GenerateLocation() *Location {
 	addr := gofakeit.Address()
 	return &Location{
@@ -80,6 +85,7 @@ func GenerateLocation() *Location {
 	}
 }
 
+// GeneratePhoto ...
 func GeneratePhoto() *Photo {
 	return &Photo{
 		Caption:      gofakeit.HackerAdjective(),
@@ -91,6 +97,7 @@ func GeneratePhoto() *Photo {
 	}
 }
 
+// GenerateOrder ...
 func GenerateOrder() *Order {
 	name := gofakeit.Name()
 	return &Order{
@@ -118,6 +125,7 @@ func GenerateOrder() *Order {
 	}
 }
 
+// GenerateProduct ...
 func GenerateProduct() *Product {
 	beer := gofakeit.BeerName()
 	return &Product{
@@ -134,6 +142,7 @@ func GenerateProduct() *Product {
 	}
 }
 
+// GenerateStore ...
 func GenerateStore() *Store {
 	return &Store{
 		Id:          xid.New().String(),

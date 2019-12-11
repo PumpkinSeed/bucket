@@ -1,7 +1,6 @@
 package bucket
 
 import (
-	"os"
 	"testing"
 
 	"github.com/rs/xid"
@@ -48,19 +47,6 @@ func TestValidateExpectError(t *testing.T) {
 	}
 	_ = th.state.updateState()
 
-}
-
-func TestSeedMockEnv(t *testing.T) {
-	test := os.Getenv("PKG_TEST")
-	var testing bool
-	if test == "testing" {
-		testing = true
-	}
-	os.Setenv("PKG_TEST", "testing")
-	seed()
-	if !testing {
-		os.Unsetenv("PKG_TEST")
-	}
 }
 
 func TestLoad(t *testing.T) {
@@ -116,15 +102,8 @@ func TestFetchDocIdentifier(t *testing.T) {
 	}
 }
 
-func TestCreateFTSIndex(t *testing.T) {
-	if err := createFullTextSearchIndex("order_fts_idx", true); err != nil {
-		t.Error(err)
-	}
-}
-
 func TestCreateEmptyIndexExpectError(t *testing.T) {
-	if err := createFullTextSearchIndex("", true); err != ErrEmptyIndex {
+	if err := createFullTextSearchIndex("", true, "webshop"); err != ErrEmptyIndex {
 		t.Errorf("error should be %s instead of %s", ErrEmptyIndex, err)
-
 	}
 }

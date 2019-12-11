@@ -75,9 +75,6 @@ func TestPingNilService(t *testing.T) {
 }
 
 func TestPingAllService(t *testing.T) {
-	services := make([]gocb.ServiceType, 5)
-	services = append(services, gocb.MemdService)
-
 	pingReport, err := th.Ping(context.Background(), []gocb.ServiceType{gocb.MemdService, gocb.MgmtService, gocb.CapiService, gocb.N1qlService, gocb.FtsService, gocb.CbasService})
 	if err != nil {
 		t.Error("error", err)

@@ -20,12 +20,11 @@ func TestGetBulk(t *testing.T) {
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false); err != nil {
-		t.Fatal(err)
-	}
+	waitUntilFtsIndexCompleted(context.Background(), "webshop_fts_index")
 
-	res, err := th.SimpleSearch(context.Background(), "webshop_fts_idx", &SearchQuery{
-		Query: webshopStatus,
+	searchMatch := "processed"
+	res, err := th.SimpleSearch(context.Background(), "webshop_fts_index", &SearchQuery{
+		Query: searchMatch,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +56,7 @@ func BenchmarkGetBulk(b *testing.B) {
 		}
 	}
 
-	if err := createFullTextSearchIndex("webshop_fts_idx", false); err != nil {
+	if err := createFullTextSearchIndex("webshop_fts_index", false, "webshop"); err != nil {
 		b.Fatal(err)
 	}
 
