@@ -22,7 +22,7 @@ func TestGetBulk(t *testing.T) {
 
 	waitUntilFtsIndexCompleted(context.Background(), "webshop_fts_index")
 
-	searchMatch := "processed"
+	searchMatch := "success"
 	res, err := th.SimpleSearch(context.Background(), "webshop_fts_index", &SearchQuery{
 		Query: searchMatch,
 	})
