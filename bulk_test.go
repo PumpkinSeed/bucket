@@ -14,7 +14,7 @@ func TestGetBulk(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		ws := generate()
 		ws.Status = "success"
-		_, _, err := th.EInsert(context.Background(), "webshop", xid.New().String(), ws, 0)
+		_, _, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,7 +49,7 @@ func BenchmarkGetBulk(b *testing.B) {
 	b.StopTimer()
 	for i := 0; i < 10; i++ {
 		ws := generate()
-		_, _, err := th.EInsert(context.Background(), "webshop", xid.New().String(), ws, 0)
+		_, _, err := th.Insert(context.Background(), "webshop", xid.New().String(), ws, 0)
 		//_, err := th.state.bucket.Insert("order::"+order.Token, order, 0)
 		if err != nil {
 			b.Fatal(err)

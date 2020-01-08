@@ -50,7 +50,7 @@ func TestHandler_Upsert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.withInsert {
 				var err error
-				_, tt.args.id, err = th.EInsert(tt.args.ctx, tt.args.typ, "", tt.args.oldDoc, tt.args.ttl)
+				_, tt.args.id, err = th.Insert(tt.args.ctx, tt.args.typ, "", tt.args.oldDoc, tt.args.ttl)
 				assert.NoErrorf(t, err, "insert error")
 
 				got := &webshop{}

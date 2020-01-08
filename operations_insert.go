@@ -8,7 +8,7 @@ import (
 	"github.com/rs/xid"
 )
 
-func (h *Handler) EInsert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
+func (h *Handler) Insert(ctx context.Context, typ, id string, q interface{}, ttl uint32) (Cas, string, error) {
 	if id == "" {
 		id = xid.New().String()
 	}
