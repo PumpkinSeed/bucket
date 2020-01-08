@@ -157,17 +157,6 @@ func TestHandler_GetInvalidInput(t *testing.T) {
 	}
 }
 
-func TestHandler_GetTypeNotFoundExpectError(t *testing.T) {
-	_, id, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = th.state.deleteType("webshop")
-	if err := th.Get(context.Background(), "webshop", id, webshop{}); err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
 func TestHandler_GetEmptyRefTagExpectErr(t *testing.T) {
 	type wsInsert struct {
 		Token   string   `json:"token"`

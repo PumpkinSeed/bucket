@@ -9,10 +9,12 @@ type metaContainer struct {
 }
 
 type meta struct {
-	ReferencedDocuments []referencedDocumentMeta `json:"referenced_documents"`
+	ChildDocuments []documentMeta `json:"_children"`
+	ParentDocument *documentMeta  `json:"_parent"`
+	Type           string         `json:"_type"`
 }
 
-type referencedDocumentMeta struct {
+type documentMeta struct {
 	Key  string `json:"key"`
 	Type string `json:"type"`
 	ID   string `json:"id"`
@@ -20,11 +22,9 @@ type referencedDocumentMeta struct {
 
 func (h *Handler) getMeta(typ, id string) (*meta, error) {
 	var c = metaContainer{}
-	dk, err := h.state.getDocumentKey(typ, id)
-	if err != nil {
-		return nil, err
-	}
-	_, err = h.state.bucket.Get(dk, &c)
+	dk := h.state.getDocumentKey(typ, id)
+
+	_, err := h.state.bucket.Get(dk, &c)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +32,8 @@ func (h *Handler) getMeta(typ, id string) (*meta, error) {
 	return c.Meta, nil
 }
 
-func (m *meta) AddReferencedDocument(key, typ, id string) {
-	m.ReferencedDocuments = append(m.ReferencedDocuments, referencedDocumentMeta{
+func (m *meta) AddChildDocument(key, typ, id string) {
+	m.ChildDocuments = append(m.ChildDocuments, documentMeta{
 		Key:  key,
 		Type: typ,
 		ID:   id,

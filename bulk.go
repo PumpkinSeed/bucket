@@ -33,10 +33,7 @@ func (h *Handler) GetBulk(ctx context.Context, hits []gocb.SearchResultHit, cont
 			identifier := h.state.fetchDocumentIdentifier(hits[i].Id)
 			addressableFields := getStructAddressableSubfields(rvElem.Index(i).Addr())
 			for _, typ := range typs {
-				documentKey, err := h.state.getDocumentKey(typ, identifier)
-				if err != nil {
-					return err
-				}
+				documentKey := h.state.getDocumentKey(typ, identifier)
 				items = append(items, &gocb.GetOp{Key: documentKey, Value: addressableFields[typ]})
 			}
 		}
