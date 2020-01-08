@@ -24,7 +24,7 @@ func TestHandler_GetSubDocuments(t *testing.T) {
 
 func TestHandler_Insert(t *testing.T) {
 	ws := generate()
-	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
+	_, id, err := th.EInsert(context.Background(), "webshop", "", ws, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

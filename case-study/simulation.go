@@ -74,7 +74,7 @@ func preload(typ string, generator func() interface{}) {
 	for i := 0; i < quantity; i++ {
 		data := generator()
 		mes := time.Now()
-		_, _, err := th.Insert(context.Background(), typ, "", data, 0)
+		_, _, err := th.EInsert(context.Background(), typ, "", data, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -93,7 +93,7 @@ func profileSelection() {
 	log.Printf("Start inserting new profiles... \n")
 	for i := 0; i < quantity/2; i++ {
 		profile := models.GenerateProfile()
-		_, id, err := th.Insert(ctx, profileType, "", profile, 0)
+		_, id, err := th.EInsert(ctx, profileType, "", profile, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,7 +152,7 @@ func profileLoad() {
 	start := time.Now()
 	for i := 0; i < quantity; i++ {
 		profile := models.GenerateProfile()
-		_, id, err := th.Insert(ctx, profileType, "", profile, 0)
+		_, id, err := th.EInsert(ctx, profileType, "", profile, 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -188,7 +188,7 @@ func touch() {
 
 	for i := 0; i < quantity; i++ {
 		order := models.GenerateOrder()
-		_, id, err := th.Insert(ctx, orderType, "", order, timeToLive)
+		_, id, err := th.EInsert(ctx, orderType, "", order, timeToLive)
 		if err != nil {
 			log.Fatal(err)
 		}

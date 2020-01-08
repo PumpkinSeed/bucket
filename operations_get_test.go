@@ -37,7 +37,7 @@ func TestHandler_GetNullString(t *testing.T) {
 		IssuingBank: "",
 		CardType:    null.String{String: "US", Valid: true},
 	}
-	_, id, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite, 0)
+	_, id, err := th.EInsert(context.Background(), "card_type", "", cardTypeWrite, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -54,7 +54,7 @@ func TestHandler_GetNilEmbeddedStruct(t *testing.T) {
 	ctx := context.Background()
 	typ := "webshop"
 	id := ""
-	_, id, err := th.Insert(ctx, typ, id, wsInsert, 0)
+	_, id, err := th.EInsert(ctx, typ, id, wsInsert, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,7 +72,7 @@ func TestHandler_GetPrimitivePtrNil(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
+	_, id, errInsert := th.EInsert(context.Background(), "webshop", "", test, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -90,7 +90,7 @@ func TestHandler_GetPrimitivePtr(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
+	_, id, errInsert := th.EInsert(context.Background(), "webshop", "", test, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -108,7 +108,7 @@ func TestHandler_GetNonPointerInput(t *testing.T) {
 		Job *string `json:"name,omitempty"`
 	}
 	test := wtyp{Job: &a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", test, 0)
+	_, id, errInsert := th.EInsert(context.Background(), "webshop", "", test, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -126,7 +126,7 @@ func TestHandler_GetNonExportedField(t *testing.T) {
 		job string
 	}
 	testInsert := wtyp{job: a}
-	_, id, errInsert := th.Insert(context.Background(), "webshop", "", testInsert, 0)
+	_, id, errInsert := th.EInsert(context.Background(), "webshop", "", testInsert, 0)
 	if errInsert != nil {
 		t.Error("Error")
 	}
@@ -176,7 +176,7 @@ func TestHandler_GetEmptyRefTagExpectErr(t *testing.T) {
 		Product *product `json:"product" cb_referenced:""`
 	}
 	ctx := context.Background()
-	_, id, err := th.Insert(ctx, "webshop", "", websh, 0)
+	_, id, err := th.EInsert(ctx, "webshop", "", websh, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func BenchmarkHandler_Get(b *testing.B) {
 func BenchmarkHandler_GetSingle(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		startInsert := time.Now()
-		_, ID, _ := th.Insert(context.Background(), "webshop", "", generate(), 0)
+		_, ID, _ := th.EInsert(context.Background(), "webshop", "", generate(), 0)
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		start := time.Now()
 		_ = th.Get(context.Background(), "webshop", ID, webshop{})
@@ -243,7 +243,7 @@ func BenchmarkHandler_GetPtr(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		job := jobtyp{Job: &j}
 		startInsert := time.Now()
-		_, id, _ := th.Insert(context.Background(), "job", "", job, 0)
+		_, id, _ := th.EInsert(context.Background(), "job", "", job, 0)
 		fmt.Printf("Insert: %vns\tGet: ", time.Since(startInsert).Nanoseconds())
 		var jobRead jobtyp
 		start := time.Now()

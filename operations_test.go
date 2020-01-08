@@ -32,7 +32,7 @@ func TestInsertNullString(t *testing.T) {
 		IssuingBank: "",
 		CardType:    null.String{String: "US", Valid: true},
 	}
-	_, _, err := th.Insert(context.Background(), "card_type", "", cardTypeWrite, 0)
+	_, _, err := th.EInsert(context.Background(), "card_type", "", cardTypeWrite, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -42,7 +42,7 @@ func TestInsertNullString(t *testing.T) {
 func TestInsertCustomID(t *testing.T) {
 	cID := xid.New().String() + "Faswwq123942390**12312_+"
 	ws := generate()
-	_, id, err := th.Insert(context.Background(), "webshop", cID, &ws, 0)
+	_, id, err := th.EInsert(context.Background(), "webshop", cID, &ws, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -58,7 +58,7 @@ func TestInsertDocumentTypeNotFoundState(t *testing.T) {
 
 func testInsert() (webshop, string, error) {
 	ws := generate()
-	_, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
+	_, id, err := th.EInsert(context.Background(), "webshop", "", ws, 0)
 	return ws, id, err
 }
 
@@ -221,7 +221,7 @@ func BenchmarkInsertEmb(b *testing.B) {
 
 func BenchmarkInsert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, _, _ = th.Insert(context.Background(), "webshop", "", generate(), 0)
+		_, _, _ = th.EInsert(context.Background(), "webshop", "", generate(), 0)
 	}
 }
 

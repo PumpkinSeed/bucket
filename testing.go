@@ -51,7 +51,7 @@ func seed() {
 
 		for j := 0; j < 1000; j++ {
 			instance := generate()
-			th.Insert(context.Background(), "webshop", "", instance, 0)
+			th.EInsert(context.Background(), "webshop", "", instance, 0)
 		}
 		fmt.Printf("Connection setup, data seeded %v\n", time.Since(start))
 		seeded = true
