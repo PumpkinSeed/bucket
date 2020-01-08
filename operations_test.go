@@ -19,18 +19,6 @@ func TestInsert(t *testing.T) {
 	}
 }
 
-func TestInsertNilEmbeddedStruct(t *testing.T) {
-	ws := generate()
-	ws.Product = nil
-	cas, id, err := th.Insert(context.Background(), "webshop", "", ws, 0)
-	if err != nil || id == "" {
-		t.Error(err)
-	}
-	if len(cas) != 2 {
-		t.Errorf("Cas should store 2 elements, instead of %d", len(cas))
-	}
-}
-
 func TestInsertNullString(t *testing.T) {
 	type nullStrTest struct {
 		Bin         int         `json:"bin"`
@@ -59,103 +47,6 @@ func TestInsertCustomID(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, cID, id, "should be equal")
-}
-
-func TestInsertPtrValue(t *testing.T) {
-	ws := generate()
-	cas, id, err := th.Insert(context.Background(), "webshop", "", &ws, 0)
-	if err != nil || id == "" {
-		t.Fatal(err)
-	}
-	if len(cas) != 4 {
-		t.Errorf("Cas should store 4 elements, instead of %d", len(cas))
-	}
-}
-
-func TestInsertPrimitivePtr(t *testing.T) {
-	asd := "asd"
-	s := struct {
-		Name *string `json:"name,omitempty"`
-	}{Name: &asd}
-	cas, id, err := th.Insert(context.Background(), "webshop", "", s, 0)
-	if err != nil || id == "" {
-		t.Error("Missing error")
-	}
-	if len(cas) != 1 {
-		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
-	}
-}
-
-func TestInsertPrimitivePtrNil(t *testing.T) {
-	s := struct {
-		Name *string `json:"name,omitempty"`
-	}{}
-	cas, id, err := th.Insert(context.Background(), "webshop", "", s, 0)
-	if err != nil || id == "" {
-		t.Error("Missing error")
-	}
-	if len(cas) != 1 {
-		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
-	}
-}
-
-func TestInsertNonExportedField(t *testing.T) {
-	s := struct {
-		name string
-	}{name: "Jackson"}
-	cas, id, err := th.Insert(context.Background(), "member", "", s, 0)
-	if err != nil || id == "" {
-		t.Error("Missing error")
-	}
-	if len(cas) != 1 {
-		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
-	}
-}
-
-func TestInsertExpectDuplicateError(t *testing.T) {
-	s := struct {
-		name string
-	}{name: "Jackson"}
-	ctx := context.Background()
-	id := xid.New().String()
-	_, _, err := th.Insert(ctx, "member", id, s, 0)
-	if err != nil {
-		t.Error("Missing error")
-	}
-	_, _, errDuplicateInsert := th.Insert(ctx, "member", id, s, 0)
-	if errDuplicateInsert == nil {
-		t.Error("error missing", errDuplicateInsert)
-	}
-	assert.EqualValues(t, "key already exists, if a cas was provided the key exists with a different cas", errDuplicateInsert.Error(), "wrong error msg")
-}
-
-func TestInsertEmptyRefTag(t *testing.T) {
-	ws := generate()
-	s := struct {
-		Name    string   `json:"name"`
-		Product *product `json:"product" cb_referenced:""`
-	}{
-		Name:    "Missing",
-		Product: ws.Product,
-	}
-	_, _, err := th.Insert(context.Background(), "name", "", s, 0)
-	if err != ErrEmptyRefTag {
-		t.Errorf("Error should be %s instead of %s", ErrEmptyRefTag, err)
-	}
-}
-
-func TestInsertEmbeddedStructExpectKeyAlreadyExistError(t *testing.T) {
-	prod := product{}
-	ctx := context.Background()
-	_, id, err := th.Insert(ctx, "product", "", prod, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ws := generate()
-	if _, _, err := th.Insert(ctx, "webshop", id, ws, 0); err != gocb.ErrKeyExists {
-		t.Errorf("error should be %s instead of %s", gocb.ErrKeyExists, err)
-
-	}
 }
 
 func TestInsertDocumentTypeNotFoundState(t *testing.T) {
@@ -210,18 +101,6 @@ func TestTouch(t *testing.T) {
 	}
 }
 
-func TestTouchDocumentTypeNotFoundExpectError(t *testing.T) {
-	ws, ID, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = th.state.deleteType("product")
-
-	if err := th.Touch(context.Background(), "webshop", ID, &ws, 10); err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
 func TestTouchNonPointerInputExpectError(t *testing.T) {
 	ws, ID, err := testInsert()
 	if err != nil {
@@ -248,18 +127,6 @@ func TestUpsertSameID(t *testing.T) {
 	}
 }
 
-func TestUpsertPtrValueNewID(t *testing.T) {
-	ws := generate()
-	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), &ws, 0)
-	if err != nil || id == "" {
-		t.Fatal(err)
-	}
-	if len(cas) != 4 {
-		t.Errorf("Cas should store 4 element, instead of %d", len(cas))
-
-	}
-}
-
 func TestUpsertPtrValueSameID(t *testing.T) {
 	ws := generate()
 	id := xid.New().String()
@@ -277,47 +144,6 @@ func TestUpsertPtrValueSameID(t *testing.T) {
 		t.Fatal(errGet)
 	}
 	assert.Equal(t, wsD, ws, "should be equal")
-}
-
-func TestUpsertPrimitivePtr(t *testing.T) {
-	asd := "asd"
-	s := struct {
-		Name *string `json:"name,omitempty"`
-	}{Name: &asd}
-	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
-	if err != nil || id == "" {
-		t.Error("Missing error")
-	}
-	if len(cas) != 1 {
-		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
-
-	}
-}
-
-func TestUpsertPrimitivePtrNil(t *testing.T) {
-	s := struct {
-		Name *string `json:"name,omitempty"`
-	}{}
-	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
-	if err != nil || id == "" {
-		t.Error("Missing error")
-	}
-	if len(cas) != 1 {
-		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
-	}
-}
-
-func TestUpsertNonExportedField(t *testing.T) {
-	s := struct {
-		name string
-	}{name: "Jackson"}
-	cas, id, err := th.Upsert(context.Background(), "webshop", xid.New().String(), s, 0)
-	if err != nil || id == "" {
-		t.Error("Missing error")
-	}
-	if len(cas) != 1 {
-		t.Errorf("Cas should store 1 element, instead of %d", len(cas))
-	}
 }
 
 func TestUpsertEmptyID(t *testing.T) {
@@ -373,21 +199,6 @@ func TestRemoveInvalidInput(t *testing.T) {
 	}
 }
 
-func TestRemoveDocumentKeyNotFoundExpectError(t *testing.T) {
-	_, id, err := testInsert()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = th.state.deleteType("product")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = th.Remove(context.Background(), "webshop", id, &webshop{})
-	if err != ErrDocumentTypeDoesntExists {
-		t.Errorf("error should be %s instead of %s", ErrDocumentTypeDoesntExists, err)
-	}
-}
-
 func TestRemoveDocumentDoesntExist(t *testing.T) {
 	_, id, err := testInsert()
 	if err != nil {
@@ -400,7 +211,6 @@ func TestRemoveDocumentDoesntExist(t *testing.T) {
 		t.Errorf("error should be %s instead of %s", gocb.ErrKeyNotFound, err)
 
 	}
-
 }
 
 func BenchmarkInsertEmb(b *testing.B) {

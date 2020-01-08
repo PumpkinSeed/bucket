@@ -37,11 +37,7 @@ func (h *Handler) GetAndTouch(ctx context.Context, typ, id string, ptr interface
 	return h.state.bucket.Do(ops)
 }
 
-func (h *Handler) get(ctx context.Context, typ, id string, ptr interface{}) (map[referencedDocumentMeta]interface{}, error) {
-	if _, err := h.state.getDocumentKey(typ, id); err != nil {
-		return nil, err
-	}
-
+func (h *Handler) get(ctx context.Context, typ, id string, ptr interface{}) (map[documentMeta]interface{}, error) {
 	// checks for invalid input, ptr must be a pointer
 	if err := h.inputcheck(ptr); err != nil {
 		return nil, err
@@ -80,14 +76,11 @@ func (h *Handler) inputcheck(ptr interface{}) error {
 }
 
 // getAllMeta read the document meta field and
-func (h *Handler) availableDocuments(tx context.Context, typ, id string, ptr interface{}) (map[referencedDocumentMeta]interface{}, error) {
-	var kv = make(map[referencedDocumentMeta]interface{})
-	dk, err := h.state.getDocumentKey(typ, id)
-	if err != nil {
-		return nil, err
-	}
+func (h *Handler) availableDocuments(tx context.Context, typ, id string, ptr interface{}) (map[documentMeta]interface{}, error) {
+	var kv = make(map[documentMeta]interface{})
+	dk := h.state.getDocumentKey(typ, id)
 
-	key := referencedDocumentMeta{
+	key := documentMeta{
 		Key:  dk,
 		Type: typ,
 		ID:   id,
@@ -99,14 +92,14 @@ func (h *Handler) availableDocuments(tx context.Context, typ, id string, ptr int
 		return nil, err
 	}
 
-	for _, rdm := range m.ReferencedDocuments {
+	for _, rdm := range m.ChildDocuments {
 		kv[rdm] = nil
 	}
 
 	return kv, nil
 }
 
-func (h *Handler) prepareResultSet(kv map[referencedDocumentMeta]interface{}) map[string]interface{} {
+func (h *Handler) prepareResultSet(kv map[documentMeta]interface{}) map[string]interface{} {
 	var result = make(map[string]interface{})
 	for rdm, elem := range kv {
 		if elem == nil {
