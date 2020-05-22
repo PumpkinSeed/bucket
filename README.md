@@ -1,3 +1,5 @@
+**DEPRECATED, WARNING: The Couchbase Group introduced collections. The main feature of this repository was to focus on one-bucket collection-like usage. Since the collections as feature already implemented in Couchbase v2, it's no longer necessary, so this repository no longer maintained.**
+
 # Bucket
 
 [![Build Status](https://travis-ci.com/PumpkinSeed/bucket.svg?branch=master)](https://travis-ci.com/PumpkinSeed/bucket)
@@ -9,7 +11,7 @@ Simple Couchbase framework.
 Project specifically focuses on the one bucket as database approach, and makes it easier to manage complex data sets. It tries to get rid of the embedded jsons per document and separates them into different documents behind the scene.
 
 ### Disclaimer:
-**DO NOT USE IN PRODUCTION.** This is still a work in progress. We will not take responsibility for any breaks in the code that happen after a new version comes out.
+This is still a work in progress. We will not take responsibility for any breaks in the code that happen after a new version comes out.
 
 #### Features:
 - Automatic index generator with indexable tags.
